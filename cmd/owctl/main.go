@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 
-	"unifi-openwrt/internal/openwrt"
+	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
 )
 
 func main() {

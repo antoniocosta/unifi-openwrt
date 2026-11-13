@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 // IfnamesByDevname maps the controller's VAP devnames (wifi0ap5) to the AP's

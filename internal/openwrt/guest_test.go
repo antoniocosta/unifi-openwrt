@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 func TestGuestRuleset(t *testing.T) {

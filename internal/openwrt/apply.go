@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 // RunStdin runs a command with the given stdin (used so secrets travel in

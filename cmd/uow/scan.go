@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"unifi-openwrt/internal/openwrt"
+	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
 )
 
 // RF scan and neighbour list (docs/internals.md). The UniFi's "scan" and

@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"unifi-openwrt/internal/inform"
+	"github.com/antoniocosta/unifi-openwrt/internal/inform"
 )
 
 // State is persisted (mode 600) so a restart keeps the adopted key.

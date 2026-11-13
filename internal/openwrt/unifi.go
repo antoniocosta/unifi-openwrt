@@ -4,9 +4,9 @@ package openwrt
 
 import (
 	"fmt"
+	"github.com/antoniocosta/unifi-openwrt/internal/models"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 	"strings"
-	"unifi-openwrt/internal/models"
-	"unifi-openwrt/internal/translate"
 )
 
 // Fields returns the inform fields that describe the AP's radios, VAPs,

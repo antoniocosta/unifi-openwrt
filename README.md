@@ -179,7 +179,14 @@ portal and RF scan.
 
 ## Building from source
 
-Go 1.26 or later.
+Go 1.26 or later. To build just the daemon for an AP without cloning, for example an ARMv7 one:
+
+```sh
+GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go install github.com/antoniocosta/unifi-openwrt/cmd/uow@latest
+# the binary lands in $(go env GOPATH)/bin/linux_arm/uow
+```
+
+From a clone:
 
 ```sh
 go test ./... && go vet ./...

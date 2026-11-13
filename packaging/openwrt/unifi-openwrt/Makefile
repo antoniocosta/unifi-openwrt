@@ -31,8 +31,8 @@ PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
-GO_PKG:=unifi-openwrt
-GO_PKG_BUILD_PKG:=unifi-openwrt/cmd/uow
+GO_PKG:=github.com/antoniocosta/unifi-openwrt
+GO_PKG_BUILD_PKG:=github.com/antoniocosta/unifi-openwrt/cmd/uow
 
 UOW_SRC_DIR?=$(realpath $(CURDIR)/../../..)
 

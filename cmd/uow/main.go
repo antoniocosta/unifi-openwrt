@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/antoniocosta/unifi-openwrt/internal/models"
 	"io"
 	"log"
 	"net"
@@ -37,13 +38,12 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"unifi-openwrt/internal/models"
 
-	"unifi-openwrt/internal/device"
-	"unifi-openwrt/internal/inform"
-	"unifi-openwrt/internal/openwrt"
-	"unifi-openwrt/internal/translate"
-	"unifi-openwrt/internal/unifiapi"
+	"github.com/antoniocosta/unifi-openwrt/internal/device"
+	"github.com/antoniocosta/unifi-openwrt/internal/inform"
+	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/unifiapi"
 )
 
 func main() {

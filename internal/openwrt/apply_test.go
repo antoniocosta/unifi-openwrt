@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 func TestUCIBatchQuoting(t *testing.T) {

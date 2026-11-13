@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"unifi-openwrt/internal/inform"
+	"github.com/antoniocosta/unifi-openwrt/internal/inform"
 )
 
 const newKey = "a066a066a066a066a066a066a066a066"

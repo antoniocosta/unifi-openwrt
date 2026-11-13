@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"unifi-openwrt/internal/inform"
+	"github.com/antoniocosta/unifi-openwrt/internal/inform"
 )
 
 //go:embed catalog.json

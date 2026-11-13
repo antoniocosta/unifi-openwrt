@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 // scheduleScript runs every minute from cron on the AP: for each scheduled

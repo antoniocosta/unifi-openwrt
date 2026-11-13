@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 func TestScheduleConf(t *testing.T) {

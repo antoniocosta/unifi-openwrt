@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"time"
 
-	"unifi-openwrt/internal/openwrt"
+	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
 )
 
 func main() {

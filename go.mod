@@ -1,4 +1,4 @@
-module unifi-openwrt
+module github.com/antoniocosta/unifi-openwrt
 
 go 1.26.0
 

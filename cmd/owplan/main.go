@@ -11,8 +11,8 @@ import (
 	"net"
 	"os"
 
-	"unifi-openwrt/internal/openwrt"
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 func main() {

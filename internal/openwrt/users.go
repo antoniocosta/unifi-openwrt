@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"unifi-openwrt/internal/translate"
+	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
 
 // usersScript keeps /etc/passwd and /etc/shadow in line with the controller's
