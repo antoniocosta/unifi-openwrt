@@ -6,7 +6,7 @@ the AP as a UniFi model of your choice (default: UAP-AC-Pro, `U7PG2`), pushes it
 shows its clients, radios and stats like those of its own APs: one network, one place to manage it.
 
 <p align="center">
-  <img src="docs/images/unifi-topology.png" alt="An OpenWrt access point in the UniFi topology view, shown as a UniFi AP" width="329">
+  <img src="docs/images/unifi-topology.gif" alt="An OpenWrt access point in the UniFi topology view, shown as a UniFi AP" width="329">
 </p>
 
 If you like this or find it useful, support the project by buying me a coffee.
