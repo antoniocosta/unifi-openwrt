@@ -1,0 +1,1366 @@
+{
+ "source": "unifi-emu model_profiles.json (MIT, Copyright (c) 2026 James Braid)",
+ "controller_version": "10.4.57",
+ "models": [
+  {
+   "model": "BZ2",
+   "display": "UniFi AP",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "BZ2LR",
+   "display": "UniFi AP-LR",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 28
+    }
+   ]
+  },
+  {
+   "model": "U2HSR",
+   "display": "UniFi AP-Outdoor+",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "U2IW",
+   "display": "UniFi AP-In Wall",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 18
+    }
+   ]
+  },
+  {
+   "model": "U2L48",
+   "display": "U2L48",
+   "version": "8.6.11.18870",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    }
+   ]
+  },
+  {
+   "model": "U2M",
+   "display": "U2M",
+   "version": "8.6.11.18870",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 18
+    }
+   ]
+  },
+  {
+   "model": "U2O",
+   "display": "UniFi AP-Outdoor",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 28
+    }
+   ]
+  },
+  {
+   "model": "U2S48",
+   "display": "U2S48",
+   "version": "8.6.11.18870",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "U5O",
+   "display": "UniFi AP-Outdoor 5G",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 27
+    }
+   ]
+  },
+  {
+   "model": "U6ENT",
+   "display": "U6-Enterprise",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U6ENTIW",
+   "display": "U6-Enterprise-IW",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U6EXT",
+   "display": "U6-Extender",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U6IW",
+   "display": "U6-IW",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U6M",
+   "display": "U6-Mesh",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U6MP",
+   "display": "U6-Mesh-Pro",
+   "version": "7.0.103.16014",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U7EDU",
+   "display": "UniFi AP-AC-EDU",
+   "version": "4.3.28.11361",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    }
+   ]
+  },
+  {
+   "model": "U7HD",
+   "display": "UniFi AP-HD",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U7IW",
+   "display": "UniFi AP-AC-In Wall",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "U7IWP",
+   "display": "UniFi AP-AC-In Wall Pro",
+   "version": "4.3.28.11361",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    }
+   ]
+  },
+  {
+   "model": "U7LR",
+   "display": "UniFi AP-AC-LR",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 24
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    }
+   ]
+  },
+  {
+   "model": "U7LT",
+   "display": "UniFi AP-AC-Lite",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "U7MP",
+   "display": "UniFi AP-AC-Mesh-Pro",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 3,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 3,
+     "min_tx": 5,
+     "max_tx": 22
+    }
+   ]
+  },
+  {
+   "model": "U7MSH",
+   "display": "UniFi AP-AC-Mesh",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "U7NHD",
+   "display": "UniFi AP-nanoHD",
+   "version": "6.7.54.15663",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U7P",
+   "display": "UniFi AP-Pro",
+   "version": "4.3.28.11361",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "U7PG2",
+   "display": "UniFi AP-AC-Pro",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 3,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 3,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "U7PIW",
+   "display": "U7-Pro-Wall",
+   "version": "8.6.11.18870",
+   "gen": 7,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U7PRO",
+   "display": "U7-Pro",
+   "version": "8.6.11.18870",
+   "gen": 7,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U7PROMAX",
+   "display": "U7-Pro-Max",
+   "version": "8.6.11.18870",
+   "gen": 7,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "U7SHD",
+   "display": "UniFi AP-SHD",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "U7UKU",
+   "display": "UK Ultra",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "UAE6",
+   "display": "U6-Extender-EA",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UAIW6",
+   "display": "U6-IW-EA",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UAL6",
+   "display": "U6-Lite",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UALR6",
+   "display": "U6-LR-EA",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UALRPL6",
+   "display": "U6 LR+",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UAM6",
+   "display": "U6-Mesh-EA",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UAP6MP",
+   "display": "U6-Pro",
+   "version": "6.8.2.15592",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UAPA693",
+   "display": "UAPA693",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 24
+    }
+   ]
+  },
+  {
+   "model": "UAPA697",
+   "display": "UAPA697",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    }
+   ]
+  },
+  {
+   "model": "UAPA698",
+   "display": "UAPA698",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    }
+   ]
+  },
+  {
+   "model": "UAPA699",
+   "display": "UAPA699",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "UAPA69E",
+   "display": "UAPA69E",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 24
+    }
+   ]
+  },
+  {
+   "model": "UAPA6A4",
+   "display": "UAPA6A4",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6A5",
+   "display": "UAPA6A5",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 24
+    }
+   ]
+  },
+  {
+   "model": "UAPA6A6",
+   "display": "UAPA6A6",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6A9",
+   "display": "UAPA6A9",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6AB",
+   "display": "UAPA6AB",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "UAPA6AC",
+   "display": "UAPA6AC",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6AE",
+   "display": "UAPA6AE",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6AF",
+   "display": "UAPA6AF",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "UAPA6B0",
+   "display": "UAPA6B0",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    }
+   ]
+  },
+  {
+   "model": "UAPA6B1",
+   "display": "UAPA6B1",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "UAPA6B3",
+   "display": "UAPA6B3",
+   "version": "8.0.74.16817",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 29
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    }
+   ]
+  },
+  {
+   "model": "UAPA6BA",
+   "display": "UAPA6BA",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 24
+    }
+   ]
+  },
+  {
+   "model": "UAPA6BC",
+   "display": "UAPA6BC",
+   "version": "8.6.11.18870",
+   "gen": 0,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 23
+    },
+    {
+     "band": "6e",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 30
+    }
+   ]
+  },
+  {
+   "model": "UAPL6",
+   "display": "U6+",
+   "version": "6.7.54.15663",
+   "gen": 6,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UCMSH",
+   "display": "UniFi AP-MeshXG",
+   "version": "8.6.11.18870",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UCXG",
+   "display": "UniFi AP-XG",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UDMB",
+   "display": "UDM Beacon",
+   "version": "6.7.54.15663",
+   "gen": 7,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UFLHD",
+   "display": "UniFi Flex HD",
+   "version": "6.7.54.15663",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UHDIW",
+   "display": "UniFi AP-HD-In Wall",
+   "version": "6.7.54.15663",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UKPW",
+   "display": "UK-Pro",
+   "version": "8.6.11.18870",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 22
+    },
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 26
+    }
+   ]
+  },
+  {
+   "model": "ULTE",
+   "display": "UniFi AP-LTE",
+   "version": "7.0.110.16137",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "ULTEPEU",
+   "display": "UniFi LTE Pro EU",
+   "version": "7.0.110.16137",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "ULTEPUS",
+   "display": "UniFi LTE Pro US",
+   "version": "7.0.110.16137",
+   "gen": 4,
+   "radios": [
+    {
+     "band": "ng",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 20
+    }
+   ]
+  },
+  {
+   "model": "UXBSDM",
+   "display": "UniFi AP-BlackBaseStationXG",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  },
+  {
+   "model": "UXSDM",
+   "display": "UniFi AP-BaseStationXG",
+   "version": "6.8.2.15592",
+   "gen": 5,
+   "radios": [
+    {
+     "band": "na",
+     "nss": 2,
+     "min_tx": 5,
+     "max_tx": 25
+    }
+   ]
+  }
+ ]
+}

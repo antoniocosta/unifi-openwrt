@@ -1,0 +1,575 @@
+=== board
+{
+	"kernel": "6.12.112",
+	"hostname": "onhub",
+	"system": "ARMv7 Processor rev 0 (v7l)",
+	"model": "TP-Link OnHub",
+	"board_name": "tplink,onhub",
+	"rootfs_type": "squashfs",
+	"release": {
+		"distribution": "OpenWrt",
+		"version": "25.12.6",
+		"firmware_url": "https://downloads.openwrt.org/",
+		"revision": "r33311-981c978eff",
+		"target": "ipq806x/chromium",
+		"description": "OpenWrt 25.12.6 r33311-981c978eff",
+		"builddate": "1792273538"
+	}
+}
+=== info
+{
+	"localtime": 1794500865,
+	"uptime": 4606,
+	"load": [
+		0,
+		0,
+		0
+	],
+	"memory": {
+		"total": 1026752512,
+		"free": 913833984,
+		"shared": 393216,
+		"buffered": 8192,
+		"available": 891383808,
+		"cached": 21839872
+	},
+	"root": {
+		"total": 3650560,
+		"free": 3519612,
+		"used": 130948,
+		"avail": 3519612
+	},
+	"tmp": {
+		"total": 501344,
+		"free": 500960,
+		"used": 384,
+		"avail": 500960
+	},
+	"swap": {
+		"total": 0,
+		"free": 0
+	}
+}
+=== route
+default via 192.168.1.1 dev br-lan  src 192.168.1.2 
+192.168.1.200/24 dev br-lan scope link  src 192.168.1.2 
+=== arp
+IP address       HW type     Flags       HW address            Mask     Device
+192.168.1.1      0x1         0x2         02:00:00:00:00:01     *        br-lan
+192.168.1.200     0x1         0x2         02:00:00:00:00:02     *        br-lan
+192.168.1.200      0x1         0x2         02:00:00:00:00:03     *        br-lan
+192.168.1.200     0x1         0x2         02:00:00:00:00:04     *        br-lan
+=== iface phy1-ap0 phy1
+{
+	"phy": "phy1",
+	"ssid": "HomeWiFi",
+	"bssid": "02:00:00:00:00:05",
+	"country": "US",
+	"mode": "Master",
+	"channel": 6,
+	"center_chan1": 6,
+	"frequency": 2437,
+	"frequency_offset": 0,
+	"txpower": 23,
+	"txpower_offset": 0,
+	"quality": 70,
+	"quality_max": 70,
+	"signal": -39,
+	"noise": -99,
+	"bitrate": 58500,
+	"encryption": {
+		"enabled": true,
+		"wpa": [
+			2,
+			3
+		],
+		"authentication": [
+			"psk",
+			"sae"
+		],
+		"ciphers": [
+			"ccmp"
+		]
+	},
+	"htmodes": [
+		"HT20",
+		"HT40"
+	],
+	"hwmodes": [
+		"b",
+		"g",
+		"n"
+	],
+	"hwmodes_text": "b/g/n",
+	"hwmode": "n",
+	"htmode": "HT20",
+	"hardware": {
+		"id": [
+			5772,
+			60,
+			0,
+			0
+		],
+		"name": "Qualcomm Atheros QCA9880"
+	}
+}
+=== assoc phy1-ap0
+{
+	"results": [
+		{
+			"mac": "02:00:00:00:00:06",
+			"signal": -39,
+			"signal_avg": -39,
+			"noise": -99,
+			"inactive": 6760,
+			"connected_time": 1339,
+			"thr": 52824,
+			"authorized": true,
+			"authenticated": true,
+			"preamble": "short",
+			"wme": true,
+			"mfp": true,
+			"tdls": false,
+			"mesh llid": 0,
+			"mesh plid": 0,
+			"mesh plink": "",
+			"mesh local PS": "",
+			"mesh peer PS": "",
+			"mesh non-peer PS": "",
+			"rx": {
+				"drop_misc": 1,
+				"packets": 188,
+				"bytes": 17399,
+				"ht": true,
+				"vht": false,
+				"he": false,
+				"eht": false,
+				"mhz": 20,
+				"rate": 72200,
+				"mcs": 7,
+				"40mhz": false,
+				"short_gi": true
+			},
+			"tx": {
+				"failed": 0,
+				"retries": 0,
+				"packets": 55,
+				"bytes": 15620,
+				"ht": true,
+				"vht": false,
+				"he": false,
+				"eht": false,
+				"mhz": 20,
+				"rate": 58500,
+				"mcs": 6,
+				"40mhz": false,
+				"short_gi": false
+			}
+		}
+	]
+}
+=== txpw phy1-ap0
+{
+	"results": [
+		{
+			"dbm": 0,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 1,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 2,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 3,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 4,
+			"mw": 2,
+			"active": false
+		},
+		{
+			"dbm": 5,
+			"mw": 3,
+			"active": false
+		},
+		{
+			"dbm": 6,
+			"mw": 3,
+			"active": false
+		},
+		{
+			"dbm": 7,
+			"mw": 5,
+			"active": false
+		},
+		{
+			"dbm": 8,
+			"mw": 6,
+			"active": false
+		},
+		{
+			"dbm": 9,
+			"mw": 7,
+			"active": false
+		},
+		{
+			"dbm": 10,
+			"mw": 10,
+			"active": false
+		},
+		{
+			"dbm": 11,
+			"mw": 12,
+			"active": false
+		},
+		{
+			"dbm": 12,
+			"mw": 15,
+			"active": false
+		},
+		{
+			"dbm": 13,
+			"mw": 19,
+			"active": false
+		},
+		{
+			"dbm": 14,
+			"mw": 25,
+			"active": false
+		},
+		{
+			"dbm": 15,
+			"mw": 31,
+			"active": false
+		},
+		{
+			"dbm": 16,
+			"mw": 39,
+			"active": false
+		},
+		{
+			"dbm": 17,
+			"mw": 50,
+			"active": false
+		},
+		{
+			"dbm": 18,
+			"mw": 63,
+			"active": false
+		},
+		{
+			"dbm": 19,
+			"mw": 79,
+			"active": false
+		},
+		{
+			"dbm": 20,
+			"mw": 100,
+			"active": false
+		},
+		{
+			"dbm": 21,
+			"mw": 125,
+			"active": false
+		},
+		{
+			"dbm": 22,
+			"mw": 158,
+			"active": false
+		},
+		{
+			"dbm": 23,
+			"mw": 199,
+			"active": true
+		},
+		{
+			"dbm": 24,
+			"mw": 251,
+			"active": false
+		},
+		{
+			"dbm": 25,
+			"mw": 316,
+			"active": false
+		},
+		{
+			"dbm": 26,
+			"mw": 398,
+			"active": false
+		},
+		{
+			"dbm": 27,
+			"mw": 501,
+			"active": false
+		},
+		{
+			"dbm": 28,
+			"mw": 630,
+			"active": false
+		},
+		{
+			"dbm": 29,
+			"mw": 794,
+			"active": false
+		},
+		{
+			"dbm": 30,
+			"mw": 1000,
+			"active": false
+		}
+	]
+}
+=== ant phy1-ap0
+	Available Antennas: TX 0x7 RX 0x7
+=== survey phy1-ap0
+	frequency:			2437 MHz [in use]
+	noise:				-99 dBm
+	channel active time:		3354740 ms
+	channel busy time:		1218787 ms
+	channel receive time:		3209 ms
+	channel transmit time:		22228 ms
+Survey data from phy1-ap0
+=== stats phy1-ap0
+rx_bytes=12542
+tx_bytes=696925
+rx_packets=70
+tx_packets=4955
+rx_errors=0
+tx_errors=0
+rx_dropped=0
+tx_dropped=0
+=== iface phy2-ap0 phy2
+{
+	"phy": "phy2",
+	"ssid": "HomeWiFi",
+	"bssid": "02:00:00:00:00:07",
+	"country": "US",
+	"mode": "Master",
+	"channel": 36,
+	"center_chan1": 42,
+	"frequency": 5180,
+	"frequency_offset": 0,
+	"txpower": 23,
+	"txpower_offset": 0,
+	"quality_max": 70,
+	"noise": -101,
+	"encryption": {
+		"enabled": true,
+		"wpa": [
+			2,
+			3
+		],
+		"authentication": [
+			"psk",
+			"sae"
+		],
+		"ciphers": [
+			"ccmp"
+		]
+	},
+	"htmodes": [
+		"HT20",
+		"HT40",
+		"VHT20",
+		"VHT40",
+		"VHT80"
+	],
+	"hwmodes": [
+		"n",
+		"ac"
+	],
+	"hwmodes_text": "ac/n",
+	"hwmode": "ac",
+	"htmode": "VHT80",
+	"hardware": {
+		"id": [
+			5772,
+			60,
+			0,
+			0
+		],
+		"name": "Qualcomm Atheros QCA9880"
+	}
+}
+=== assoc phy2-ap0
+{
+	"results": [
+		
+	]
+}
+=== txpw phy2-ap0
+{
+	"results": [
+		{
+			"dbm": 0,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 1,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 2,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 3,
+			"mw": 1,
+			"active": false
+		},
+		{
+			"dbm": 4,
+			"mw": 2,
+			"active": false
+		},
+		{
+			"dbm": 5,
+			"mw": 3,
+			"active": false
+		},
+		{
+			"dbm": 6,
+			"mw": 3,
+			"active": false
+		},
+		{
+			"dbm": 7,
+			"mw": 5,
+			"active": false
+		},
+		{
+			"dbm": 8,
+			"mw": 6,
+			"active": false
+		},
+		{
+			"dbm": 9,
+			"mw": 7,
+			"active": false
+		},
+		{
+			"dbm": 10,
+			"mw": 10,
+			"active": false
+		},
+		{
+			"dbm": 11,
+			"mw": 12,
+			"active": false
+		},
+		{
+			"dbm": 12,
+			"mw": 15,
+			"active": false
+		},
+		{
+			"dbm": 13,
+			"mw": 19,
+			"active": false
+		},
+		{
+			"dbm": 14,
+			"mw": 25,
+			"active": false
+		},
+		{
+			"dbm": 15,
+			"mw": 31,
+			"active": false
+		},
+		{
+			"dbm": 16,
+			"mw": 39,
+			"active": false
+		},
+		{
+			"dbm": 17,
+			"mw": 50,
+			"active": false
+		},
+		{
+			"dbm": 18,
+			"mw": 63,
+			"active": false
+		},
+		{
+			"dbm": 19,
+			"mw": 79,
+			"active": false
+		},
+		{
+			"dbm": 20,
+			"mw": 100,
+			"active": false
+		},
+		{
+			"dbm": 21,
+			"mw": 125,
+			"active": false
+		},
+		{
+			"dbm": 22,
+			"mw": 158,
+			"active": false
+		},
+		{
+			"dbm": 23,
+			"mw": 199,
+			"active": true
+		}
+	]
+}
+=== ant phy2-ap0
+	Available Antennas: TX 0x7 RX 0x7
+=== survey phy2-ap0
+	frequency:			5180 MHz [in use]
+	noise:				-101 dBm
+	channel active time:		3355807 ms
+	channel busy time:		155139 ms
+	channel receive time:		200 ms
+	channel transmit time:		13598 ms
+Survey data from phy2-ap0
+=== stats phy2-ap0
+rx_bytes=0
+tx_bytes=680292
+rx_packets=0
+tx_packets=4891
+rx_errors=0
+tx_errors=0
+rx_dropped=0
+tx_dropped=0
+=== port lan1
+mac=02:00:00:00:00:08
+speed=1000
+duplex=full
+oper=up
+rx_bytes=2859747
+tx_bytes=266022
+rx_packets=17011
+tx_packets=2055
+=== port wan
+mac=02:00:00:00:00:09
+speed=-1
+duplex=unknown
+oper=lowerlayerdown
+rx_bytes=0
+tx_bytes=0
+rx_packets=0
+tx_packets=0
+=== lan
+10: br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP qlen 1000
+    inet 192.168.1.2/24 brd 192.168.1.200 scope global br-lan
+       valid_lft forever preferred_lft forever
+02:00:00:00:00:08

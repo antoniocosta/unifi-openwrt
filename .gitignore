@@ -1,0 +1,8 @@
+# Build output
+dist/
+
+# Runtime state, keys, controller backups and secrets
+/state/
+*.unf
+.secrets
+*.pass

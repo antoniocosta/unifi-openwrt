@@ -1,0 +1,27 @@
+config unifi 'main'
+	# 1 = run the daemon (adopt this AP into a UniFi controller)
+	option enabled '0'
+	# UniFi model to be adopted as (uow -models; uow -ap local -suggest)
+	option model 'U7PG2'
+	# controller inform URL (IP literal)
+	option inform_url 'http://192.168.1.1:8080/inform'
+	# name reported before the controller names the device (default: the system hostname)
+	#option hostname 'OpenWrt'
+	# 1 = apply the controller's settings (0 = log the plan only)
+	option apply '1'
+	# claim the UniFi model's full capabilities (U7PG2 profile)
+	option profile_caps '1'
+	# beep on Locate (APs with a speaker)
+	option locate_beep '1'
+	# 1 = mesh: when no cable has link for 20 s, uplink over Wi-Fi to the site's mesh
+	# (UniFi meshing); the wireless uplink is dropped as soon as a cable has link
+	option mesh_uplink '0'
+	# port of the adoption SSH responder (the controller adopts over SSH)
+	option ssh_port '2222'
+	# LED hardware bits to claim (2 = colour, 16384 = brightness); 0 = the model's (AC Pro: none)
+	option hw_caps '0'
+	# own status report interval in seconds; 0 = follow the controller (10 s, 1 s while watched)
+	option inform_every '0'
+	# idle LED effect instead of steady blue: 'rainbow' (APs with RGB LED rings,
+	# e.g. the OnHub); empty = blue, like the UniFi model
+	option led_idle ''
