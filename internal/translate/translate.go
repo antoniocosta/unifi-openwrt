@@ -257,6 +257,14 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 				r.Notes = append(r.Notes, fmt.Sprintf("%s: %s requested but this AP's hostapd lacks it: left off (needs full wpad)", ifs, x.what))
 				x.on = false
 			}
+			if !x.ok {
+				// not even "0": a hostapd without the feature rejects the
+				// key itself (bss_transition without CONFIG_WNM_AP)
+				if old, has := cur[k+x.opt]; has {
+					r.Ops = append(r.Ops, Op{Del: true, Key: k + x.opt, Old: old})
+				}
+				continue
+			}
 			want[x.opt] = boolStr(x.on)
 		}
 		if d := cfg[w+"dtim_period"]; d != "" {

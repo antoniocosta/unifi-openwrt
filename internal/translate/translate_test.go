@@ -145,6 +145,20 @@ func TestClampUnsupported(t *testing.T) {
 			t.Errorf("features %+v: bss_transition set=%v", f, set)
 		}
 	}
+	// without WNM a stale bss_transition (even '0') is deleted, not kept
+	r := Plan(ParseCfg(c), ParseUCI(cur+"wireless.ap0.bss_transition='1'\n"), Features{})
+	del := false
+	for _, op := range r.Ops {
+		if op.Key == "wireless.ap0.bss_transition" {
+			if !op.Del {
+				t.Errorf("unsupported bss_transition written: %+v", op)
+			}
+			del = op.Del
+		}
+	}
+	if !del {
+		t.Errorf("stale bss_transition not deleted: %v", r.Ops)
+	}
 }
 
 func TestPlanSystem(t *testing.T) {

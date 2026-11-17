@@ -227,11 +227,13 @@ func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) 
 // featureScript prints the optional hostapd features this AP has. hostapd
 // has -v probes for 11r (and 11ac, 11ax, sae, ...), but not for 802.11k/v:
 // those are detected by their config keys in the binary (bss_transition is
-// only compiled in with CONFIG_WNM_AP).
+// only compiled in with CONFIG_WNM_AP). bss_transition must be a whole
+// string: a wpad without WNM still holds "bss_transition_request" and
+// friends, and hostapd then rejects the bss_transition line.
 const featureScript = `b=$(readlink -f "$(command -v hostapd)"); [ -n "$b" ] || exit 0
 hostapd -v11r >/dev/null 2>&1 && echo 11r
 grep -q -a rrm_neighbor_report "$b" && echo 11k
-grep -q -a bss_transition "$b" && echo 11v
+tr '\0' '\n' < "$b" | grep -qx bss_transition && echo 11v
 true`
 
 // Features reports what the AP's hostapd supports, plus its radios.

@@ -3,7 +3,9 @@
 package openwrt
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -99,6 +101,29 @@ func TestApplyScriptNoScanIface(t *testing.T) {
 	out, err := exec.Command("sh", "-c", "set -e; iw() { return 237; }; wifi() { echo reloaded; }; "+line).CombinedOutput()
 	if err != nil || strings.TrimSpace(string(out)) != "reloaded" {
 		t.Errorf("%q: %v %s", line, err, out)
+	}
+}
+
+// A wpad built without WNM still holds strings like "bss_transition_request";
+// only a config key of its own means hostapd takes bss_transition.
+func TestFeatureScript11v(t *testing.T) {
+	for body, want := range map[string]bool{
+		"#!/bin/sh\nexit 1\n# bss_transition_request\n": false,
+		"#!/bin/sh\nexit 1\nbss_transition\n":           true,
+	} {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "hostapd"), []byte(body), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		c := exec.Command("sh", "-c", featureScript)
+		c.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"))
+		out, err := c.Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.Contains(string(out), "11v"); got != want {
+			t.Errorf("%q: 11v = %v, want %v", body, got, want)
+		}
 	}
 }
 
