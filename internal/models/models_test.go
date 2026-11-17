@@ -29,3 +29,12 @@ func TestSuggest(t *testing.T) {
 		t.Fatalf("6E top %v", s[0])
 	}
 }
+
+func TestRearUplinkPort(t *testing.T) {
+	for code, want := range map[string]int{"U6IW": 5, "U6ENTIW": 5, "U7PG2": 0} {
+		m, ok := Lookup(code)
+		if !ok || m.RearUplinkPort() != want {
+			t.Errorf("%s: RearUplinkPort = %d (found %v), want %d", code, m.RearUplinkPort(), ok, want)
+		}
+	}
+}

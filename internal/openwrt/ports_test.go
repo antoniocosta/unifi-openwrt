@@ -79,6 +79,29 @@ func TestPortTableWiredClients(t *testing.T) {
 	}
 }
 
+// An in-wall model: front ports from 1, the uplink jack as port 5.
+func TestPortTableRearUplink(t *testing.T) {
+	s := &Snapshot{RearUplink: 5, UplinkName: "wan", Ports: []Port{
+		{Name: "lan1", MAC: "08:55:66:77:00:01", Up: true, BridgePort: 1},
+		{Name: "lan2", MAC: "08:55:66:77:00:01", BridgePort: 2},
+		{Name: "wan", MAC: "08:55:66:77:00:04", Up: true, BridgePort: 4},
+	}}
+	rows, _ := s.Fields(nil, CfgInfo{}, nil)["port_table"].([]map[string]any)
+	var got []any
+	for _, r := range rows {
+		got = append(got, r["port_idx"], r["name"], r["ifname"], r["is_uplink"])
+	}
+	want := []any{1, "Port 1", "lan1", false, 2, "Port 2", "lan2", false, 5, "PoE In + Data", "wan", true}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("port_table = %v, want %v", got, want)
+	}
+	s.RearUplink = 0
+	rows, _ = s.Fields(nil, CfgInfo{}, nil)["port_table"].([]map[string]any)
+	if rows[0]["port_idx"] != 1 || rows[0]["name"] != "Main" || rows[0]["ifname"] != "wan" {
+		t.Errorf("without RearUplink the uplink stays port 1 Main: %v", rows[0])
+	}
+}
+
 // -uplink-port wins over the gateway's FDB entry.
 func TestUplinkPortForced(t *testing.T) {
 	s := &Snapshot{

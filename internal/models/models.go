@@ -63,6 +63,15 @@ func Lookup(code string) (Model, bool) {
 	return m, ok
 }
 
+// rearUplink: the in-wall models whose uplink is the jack on the back
+// (PoE In + Data), port 5 after the four front ports. The controller's model
+// table gives each of them 5 ports.
+var rearUplink = map[string]int{"U6IW": 5, "UAIW6": 5, "U6ENTIW": 5, "UHDIW": 5}
+
+// RearUplinkPort is the port number of m's rear uplink jack; 0 = the uplink
+// is port 1, as on the AC Pro.
+func (m Model) RearUplinkPort() int { return rearUplink[m.Code] }
+
 func (m Model) Bands() string {
 	var b []string
 	for _, r := range m.Radios {

@@ -166,6 +166,9 @@ type Snapshot struct {
 	// UplinkName: the port that is always the uplink (-uplink-port, not
 	// read from the AP); empty = found from the gateway's FDB entry.
 	UplinkName string
+	// RearUplink: the port number the model gives its rear uplink jack
+	// (models.Model.RearUplinkPort); 0 = the uplink is port 1.
+	RearUplink int
 }
 
 // FDBEntry is one row of the br-lan forwarding database

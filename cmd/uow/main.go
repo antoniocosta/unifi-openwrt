@@ -205,7 +205,7 @@ func main() {
 			} else {
 				lastErr = ""
 			}
-			s.UplinkName = *uplinkName
+			s.UplinkName, s.RearUplink = *uplinkName, model.RearUplinkPort()
 			cfg, _ := os.ReadFile(filepath.Join(*stateDir, "system_cfg.txt"))
 			info := openwrt.InfoFromCfg(string(cfg))
 			info.Authorized = map[string]bool{}

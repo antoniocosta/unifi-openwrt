@@ -289,6 +289,13 @@ LAN port is still told apart. Without that entry the first up `lan*` port
 is the uplink, as before. `-uplink-port` (UCI `uplink_port`) names the
 uplink port outright and skips both.
 
+The in-wall models with four front ports (U6-IW, U6-IW-EA,
+U6-Enterprise-IW, AP-HD-In Wall: 5 ports in the controller's model table)
+report the jack on the back as port 5 and the front ports from 1, so the
+other ports sit in the panel's four port squares. Port 5 is named
+`PoE In + Data`, after the jack's label. Other models keep port 1 = the
+uplink.
+
 Every other br-lan port carries a `mac_table` (`mac`, `age`, `vlan`,
 `static`), read from `/sys/class/net/br-lan/brforward` with busybox
 `hexdump`. The controller handles a UAP's `port_table` like a switch's only

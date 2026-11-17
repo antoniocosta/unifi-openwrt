@@ -79,15 +79,22 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 	// port_table: the physical Ethernet ports, as a UAP with two ports
 	// reports them (port 1 "Main" = the uplink port, then the rest); the
 	// controller keeps port_idx/media/poe/speed_caps and shows the row as
-	// port_stats (gliBtHTTrWRd, docs/internals.md).
+	// port_stats (gliBtHTTrWRd, docs/internals.md). An in-wall model numbers
+	// its front ports from 1 and the rear uplink jack last (RearUplink).
 	if len(phys) > 0 {
+		rear := s.RearUplink > 0 && s.uplinkPort() != nil && len(phys) <= s.RearUplink
 		var rows []map[string]any
 		for i, p := range phys {
-			name := "Main"
+			idx, name := i+1, "Main"
 			if i == 1 {
 				name = "Secondary"
 			} else if i > 1 {
 				name = fmt.Sprintf("Port %d", i+1)
+			}
+			if rear && i == 0 {
+				idx, name = s.RearUplink, "PoE In + Data"
+			} else if rear {
+				idx, name = i, fmt.Sprintf("Port %d", i)
 			}
 			speed := p.Speed
 			if !p.Up || speed < 0 {
@@ -95,7 +102,7 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			}
 			uplink := i == 0 && p.Up
 			row := map[string]any{
-				"port_idx": i + 1, "name": name, "media": "GE", "ifname": p.Name,
+				"port_idx": idx, "name": name, "media": "GE", "ifname": p.Name,
 				"poe_caps": 0, "port_poe": false, "speed_caps": 1048623, // 10/100/1000, autoneg
 				"enable": true, "autoneg": true, "op_mode": "switch",
 				"up": p.Up, "speed": speed, "full_duplex": p.Up && p.FullDuplex,
@@ -110,6 +117,9 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 				row["mac_table"] = s.portMACs(p.BridgePort)
 			}
 			rows = append(rows, row)
+		}
+		if rear {
+			rows = append(rows[1:], rows[0]) // in port order: the uplink last
 		}
 		m["port_table"] = rows
 		m["has_eth1"] = len(phys) > 1
