@@ -93,14 +93,23 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			if !p.Up || speed < 0 {
 				speed = 0
 			}
-			rows = append(rows, map[string]any{
+			uplink := i == 0 && p.Up
+			row := map[string]any{
 				"port_idx": i + 1, "name": name, "media": "GE", "ifname": p.Name,
 				"poe_caps": 0, "port_poe": false, "speed_caps": 1048623, // 10/100/1000, autoneg
 				"enable": true, "autoneg": true, "op_mode": "switch",
 				"up": p.Up, "speed": speed, "full_duplex": p.Up && p.FullDuplex,
-				"is_uplink": i == 0 && p.Up,
+				"is_uplink": uplink,
 				"rx_bytes":  p.RxBytes, "tx_bytes": p.TxBytes, "rx_packets": p.RxPkts, "tx_packets": p.TxPkts,
-			})
+			}
+			// mac_table: the wired clients behind a downlink port. A model
+			// with the ACCESS_POINT_SWITCH feature (U6-IW and the other
+			// in-wall APs) gets them listed as wired clients on that port
+			// (lTGxQKc, docs/internals.md).
+			if !uplink && p.BridgePort > 0 {
+				row["mac_table"] = s.portMACs(p.BridgePort)
+			}
+			rows = append(rows, row)
 		}
 		m["port_table"] = rows
 		m["has_eth1"] = len(phys) > 1
@@ -276,9 +285,13 @@ func (s *Snapshot) radio(phy string) *Radio {
 	return nil
 }
 
-// uplinkPort: the wired port that is up (prefer a "lan" port, as on the
-// OnHub where the cable is in its LAN port).
+// uplinkPort: the wired port the gateway is behind; failing that, the
+// wired port that is up (prefer a "lan" port, as on the OnHub where the
+// cable is in its LAN port).
 func (s *Snapshot) uplinkPort() *Port {
+	if p := s.gatewayPort(); p != nil {
+		return p
+	}
 	var best *Port
 	for i := range s.Ports {
 		p := &s.Ports[i]
@@ -290,6 +303,54 @@ func (s *Snapshot) uplinkPort() *Port {
 		}
 	}
 	return best
+}
+
+// gatewayPort: the up port whose br-lan FDB entry holds the gateway's MAC
+// (nil when the gateway is not in the ARP table or not behind a wired port).
+func (s *Snapshot) gatewayPort() *Port {
+	if s.Gateway == "" {
+		return nil
+	}
+	for mac, ip := range s.ARP {
+		if ip != s.Gateway {
+			continue
+		}
+		for _, e := range s.FDB {
+			if e.MAC != mac || e.Local {
+				continue
+			}
+			for i := range s.Ports {
+				if p := &s.Ports[i]; p.Up && p.BridgePort == e.Port {
+					return p
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// portMACs: the mac_table rows of one br-lan port, one per MAC (the
+// youngest entry when a MAC shows up on more than one VLAN). The FDB carries
+// no VLAN, so every row is on VLAN 1, the untagged LAN.
+func (s *Snapshot) portMACs(port int) []map[string]any {
+	age := map[string]int64{}
+	var order []string
+	for _, e := range s.FDB {
+		if e.Port != port || e.Local || e.MAC == s.MAC {
+			continue
+		}
+		if a, ok := age[e.MAC]; !ok {
+			order = append(order, e.MAC)
+		} else if a <= e.Age {
+			continue
+		}
+		age[e.MAC] = e.Age
+	}
+	rows := []map[string]any{}
+	for _, mac := range order {
+		rows = append(rows, map[string]any{"mac": mac, "age": age[mac], "vlan": 1, "static": false})
+	}
+	return rows
 }
 
 // physPorts: the physical Ethernet ports, the uplink port first. Virtual

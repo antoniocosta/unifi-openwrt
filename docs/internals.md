@@ -283,6 +283,20 @@ For a wired uplink the `eth0` row carries `signal 0`, `rssi 0`,
 `is_mesh_v3 false`: the controller merges the row into the stored uplink,
 and old mesh values would otherwise keep a mesh signal bar on the map.
 
+The uplink port is the up port whose br-lan FDB entry holds the gateway's
+MAC (from the ARP table), so a cable in the WAN port next to a client in a
+LAN port is still told apart. Without that entry the first up `lan*` port
+is the uplink, as before.
+
+Every other br-lan port carries a `mac_table` (`mac`, `age`, `vlan`,
+`static`), read from `/sys/class/net/br-lan/brforward` with busybox
+`hexdump`. The controller handles a UAP's `port_table` like a switch's only
+when the model has the `ACCESS_POINT_SWITCH` feature (`XCfthFC.isSwitch`):
+the in-wall models (U6-IW, U6-Enterprise-IW, AC-IW, ...) do, the AC Pro
+does not. For those it walks each non-uplink port (`lTGxQKc`) and lists the
+MACs as wired clients on that port; a network matches a row by `vlan`
+(default 1). The FDB carries no VLAN, so every row says 1, the untagged LAN.
+
 ### System
 
 - `sys_stats` (`loadavg_*`, `mem_*`) and **`system-stats`** (`cpu`, `mem`,

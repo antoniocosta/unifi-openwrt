@@ -108,6 +108,7 @@ Tested live on the device above unless marked otherwise.
 | Live updates (1 s informs while the panel is open) | works |
 | Wi-Fi experience (satisfaction) | partial: PHY-rate and retry sub-scores, as the firmware computes them ([details](docs/internals.md#unifi-ap-satisfaction--wifi-experience-score-how-it-is-computed)) |
 | Ethernet ports in the device panel | works (Port Manager; an AC Pro has no port squares) |
+| Wired clients on the AP's LAN ports | built, **untested live**; in-wall models only (U6-IW and the others with the `ACCESS_POINT_SWITCH` feature) |
 | Radios: channel, width, transmit power, country | works |
 | Indoor / Outdoor | works (Country IE environment) |
 | Minimum RSSI, load balancing (max clients) | works |

@@ -134,7 +134,10 @@ for e in $(ls /sys/class/net); do
   case $e in lo|br-*|eth*) continue;; esac
   echo "=== port $e"; printf 'mac=%s\nspeed=%s\nduplex=%s\noper=%s\n' $(cat /sys/class/net/$e/address) $(cat /sys/class/net/$e/speed 2>/dev/null || echo 0) $(cat /sys/class/net/$e/duplex 2>/dev/null || echo unknown) $(cat /sys/class/net/$e/operstate)
   for f in rx_bytes tx_bytes rx_packets tx_packets; do printf '%s=%s\n' $f $(cat /sys/class/net/$e/statistics/$f); done
+  b=$(readlink /sys/class/net/$e/brport/bridge 2>/dev/null)
+  [ "${b##*/}" = br-lan ] && printf 'brport=%s\n' $(cat /sys/class/net/$e/brport/port_no)
 done
+echo "=== fdb"; hexdump -v -e '6/1 "%02x" 1/1 " %u" 1/1 " %u" 1/4 " %u" 1/1 " %u" 3/1 "" "\n"' /sys/class/net/br-lan/brforward 2>/dev/null
 echo "=== lan"; ip -4 addr show br-lan; cat /sys/class/net/br-lan/address
 `
 
@@ -159,6 +162,16 @@ type Snapshot struct {
 	Radios   []Radio
 	Ports    []Port
 	ARP      map[string]string // mac -> ip
+	FDB      []FDBEntry        // br-lan forwarding database
+}
+
+// FDBEntry is one row of the br-lan forwarding database
+// (/sys/class/net/br-lan/brforward, struct __fdb_entry).
+type FDBEntry struct {
+	MAC   string
+	Port  int   // bridge port number (Port.BridgePort)
+	Local bool  // one of the AP's own addresses
+	Age   int64 // s since the MAC was last seen
 }
 
 type Radio struct {
@@ -209,6 +222,7 @@ type Port struct {
 	FullDuplex, Up   bool
 	RxBytes, TxBytes int64
 	RxPkts, TxPkts   int64
+	BridgePort       int // port number in br-lan, 0 = not a br-lan member
 }
 
 // Collect reads the AP once.
@@ -299,9 +313,13 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 			p.Speed = int(atoi(kv["speed"]))
 			p.RxBytes, p.TxBytes = atoi(kv["rx_bytes"]), atoi(kv["tx_bytes"])
 			p.RxPkts, p.TxPkts = atoi(kv["rx_packets"]), atoi(kv["tx_packets"])
+			if n, err := strconv.ParseInt(kv["brport"], 0, 32); err == nil {
+				p.BridgePort = int(n)
+			}
 			s.Ports = append(s.Ports, p)
 		}
 	}
+	s.FDB = parseFDB(secs.get("fdb"))
 	// Group interfaces by phy: one radio per phy, its interfaces as VAPs.
 	var radios []Radio
 	idx := map[string]int{}
@@ -322,6 +340,27 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 	s.Radios = radios
 	sort.SliceStable(s.Radios, func(i, j int) bool { return s.Radios[i].Band > s.Radios[j].Band }) // ng before na
 	return s, nil
+}
+
+// parseFDB reads the hexdump of brforward: "mac port_no is_local ageing
+// port_hi" per line, the ageing timer in clock ticks (USER_HZ, 100/s).
+func parseFDB(b []byte) []FDBEntry {
+	var out []FDBEntry
+	for _, line := range strings.Split(string(b), "\n") {
+		f := strings.Fields(line)
+		if len(f) != 5 || len(f[0]) != 12 {
+			continue
+		}
+		var mac []string
+		for i := 0; i < 12; i += 2 {
+			mac = append(mac, f[0][i:i+2])
+		}
+		out = append(out, FDBEntry{
+			MAC: strings.Join(mac, ":"), Port: int(atoi(f[4])<<8 | atoi(f[1])),
+			Local: f[2] != "0", Age: atoi(f[3]) / 100,
+		})
+	}
+	return out
 }
 
 func parseRadio(iface, phy string, secs *secMap) (Radio, error) {
