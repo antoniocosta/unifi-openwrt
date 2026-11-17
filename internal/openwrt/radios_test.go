@@ -54,3 +54,30 @@ func TestRadiosWithoutWirelessStatus(t *testing.T) {
 		t.Errorf("radios = %+v", r)
 	}
 }
+
+// A radio whose iwinfo htmodes include a 160 MHz mode gets has_ht160, the
+// flag the controller needs before it offers 160 MHz.
+func TestHT160(t *testing.T) {
+	out := `=== board
+{"hostname":"ap","model":"m","release":{"description":"OpenWrt"}}
+=== iface phy0-ap0 phy0
+{"ssid":"x","bssid":"02:00:00:00:00:01","mode":"Master","channel":36,"frequency":5180,"hwmodes":["a","n","ac","ax"],"htmodes":["HT20","VHT80","VHT160","HE80","HE160"]}
+=== assoc phy0-ap0
+{"results":[]}
+=== iface phy1-ap0 phy1
+{"ssid":"x","bssid":"02:00:00:00:00:02","mode":"Master","channel":6,"frequency":2437,"hwmodes":["b","g","n","ax"],"htmodes":["HT20","HT40","HE20","HE40"]}
+=== assoc phy1-ap0
+{"results":[]}
+`
+	s, err := Parse([]byte(out), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[any]any{}
+	for _, r := range s.Fields(nil, CfgInfo{}, nil)["radio_table"].([]map[string]any) {
+		got[r["radio"]] = r["has_ht160"]
+	}
+	if got["na"] != true || got["ng"] != nil {
+		t.Errorf("has_ht160 by band = %v, want na only", got)
+	}
+}

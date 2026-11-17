@@ -164,6 +164,11 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			"radio_caps": 0, "antenna_gain": 3, "builtin_antenna": true, "builtin_ant_gain": 3,
 			"is_11ac": r.VHT, "is_11ax": r.HE,
 		})
+		if r.W160 {
+			// the controller offers 160 MHz only to a radio row with
+			// has_ht160 (DRUVu); is_11ac/is_11ax alone cap it at 80
+			radios[len(radios)-1]["has_ht160"] = true
+		}
 		if c, ok := caps[r.Band]; ok {
 			rr := radios[len(radios)-1]
 			rr["ieee_modes"], rr["radio_caps"], rr["radio_caps2"] = c.IEEEModes, c.RadioCaps, c.RadioCaps2

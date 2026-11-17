@@ -201,6 +201,7 @@ type Radio struct {
 	HWName      string
 	Encryption  string
 	VHT, HE     bool // hardware supports 802.11ac / ax
+	W160        bool // hardware supports 160 MHz (iwinfo htmodes)
 	Survey      Survey
 	Stats       map[string]int64
 	Stations    []Station
@@ -457,6 +458,7 @@ func parseRadio(iface, phy string, secs *secMap) (Radio, error) {
 		Noise       int                   `json:"noise"`
 		HTMode      string                `json:"htmode"`
 		HWModes     []string              `json:"hwmodes"`
+		HTModes     []string              `json:"htmodes"`
 		Hardware    struct{ Name string } `json:"hardware"`
 		Encryption  struct {
 			WPA            []int    `json:"wpa"`
@@ -488,6 +490,9 @@ func parseRadio(iface, phy string, secs *secMap) (Radio, error) {
 	for _, m := range info.HWModes {
 		r.VHT = r.VHT || m == "ac"
 		r.HE = r.HE || m == "ax"
+	}
+	for _, m := range info.HTModes {
+		r.W160 = r.W160 || strings.HasSuffix(m, "160")
 	}
 
 	var tp struct {

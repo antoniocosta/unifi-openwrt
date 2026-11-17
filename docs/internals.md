@@ -517,7 +517,8 @@ The controller decides what to push from capability words in the inform:
 - Per radio: `ieee_modes`, `radio_caps`, `radio_caps2`, `is_11ac`, `has_dfs`,
   `has_fccdfs`. The 5 GHz width resolver uses min(country, radio ht, device
   caps), and the device caps allow 80 MHz only if the radio row has `is_11ac`
-  (or `is_11ax`).
+  (or `is_11ax`), 160 MHz only with `has_ht160` (`DRUVu`). The collector sets
+  `has_ht160` when iwinfo's `htmodes` for the radio include a 160 MHz mode.
 - `hw_caps`: LED bar colour (2) and brightness (16384), see [Status LED](#status-led).
 
 With nothing claimed (`fw_caps 3`, no `wifi_caps`) the controller pushes a
