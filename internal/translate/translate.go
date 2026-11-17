@@ -416,8 +416,9 @@ func indices(cfg Cfg, top string) []string {
 }
 
 // htmode maps UniFi ieee_mode (11nght20, 11naht40, 11acvht80, ...) to
-// OpenWrt htmode. On a 5 GHz radio that already runs VHT, n-mode widths
-// become VHT of the same width (the UniFi names a U7PG2's AC radio "na").
+// OpenWrt htmode. On a 5 GHz radio that already runs VHT, HE or EHT, n-mode
+// widths keep that mode at the new width (the UniFi names a U7PG2's AC radio
+// "na"). HT has no 80 or 160 MHz, so those widths are at least VHT.
 func htmode(mode, cur string) string {
 	if mode == "" {
 		return ""
@@ -432,11 +433,20 @@ func htmode(mode, cur string) string {
 	switch {
 	case strings.Contains(mode, "he"):
 		return "HE" + width
-	case strings.Contains(mode, "vht"), strings.Contains(mode, "na") && strings.HasPrefix(cur, "VHT"):
+	case strings.Contains(mode, "vht"):
 		return "VHT" + width
-	default:
-		return "HT" + width
 	}
+	if strings.Contains(mode, "na") {
+		for _, fam := range []string{"EHT", "HE", "VHT"} {
+			if strings.HasPrefix(cur, fam) {
+				return fam + width
+			}
+		}
+	}
+	if width == "80" || width == "160" {
+		return "VHT" + width
+	}
+	return "HT" + width
 }
 
 // countryCode: the alpha-2 country for a radio (its own code, else the

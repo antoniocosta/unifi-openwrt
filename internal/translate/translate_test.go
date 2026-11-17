@@ -120,6 +120,10 @@ func TestPlanChanges(t *testing.T) {
 func TestHTMode(t *testing.T) {
 	for in, want := range map[[2]string]string{
 		{"11nght20", "HT20"}: "HT20", {"11naht80", "VHT80"}: "VHT80", {"11naht40", "VHT80"}: "VHT40", {"11naht40", "HT40"}: "HT40",
+		// An 802.11ax radio (OpenWrt's default HE80) must not drop to HT80,
+		// which wifi-scripts reject; HT has no 80 MHz.
+		{"11naht80", "HE80"}: "HE80", {"11naht40", "HE80"}: "HE40", {"11naht80", "EHT160"}: "EHT80",
+		{"11naht80", "HT40"}: "VHT80", {"11naht80", ""}: "VHT80",
 	} {
 		if got := htmode(in[0], in[1]); got != want {
 			t.Errorf("htmode(%v) = %s, want %s", in, got, want)
