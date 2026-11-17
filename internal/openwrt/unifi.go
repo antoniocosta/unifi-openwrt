@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/antoniocosta/unifi-openwrt/internal/models"
 	"github.com/antoniocosta/unifi-openwrt/internal/translate"
+	"sort"
 	"strings"
 )
 
@@ -82,7 +83,7 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 	// port_stats (gliBtHTTrWRd, docs/internals.md). An in-wall model numbers
 	// its front ports from 1 and the rear uplink jack last (RearUplink).
 	if len(phys) > 0 {
-		rear := s.RearUplink > 0 && s.uplinkPort() != nil && len(phys) <= s.RearUplink
+		rear := s.RearUplink > 0 && s.uplinkPort() != nil
 		var rows []map[string]any
 		for i, p := range phys {
 			idx, name := i+1, "Main"
@@ -94,7 +95,11 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			if rear && i == 0 {
 				idx, name = s.RearUplink, "PoE In + Data"
 			} else if rear {
-				idx, name = i, fmt.Sprintf("Port %d", i)
+				idx = i // front ports from 1; more ports than the model has go after the uplink
+				if i >= s.RearUplink {
+					idx = i + 1
+				}
+				name = fmt.Sprintf("Port %d", idx)
 			}
 			speed := p.Speed
 			if !p.Up || speed < 0 {
@@ -119,7 +124,7 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			rows = append(rows, row)
 		}
 		if rear {
-			rows = append(rows[1:], rows[0]) // in port order: the uplink last
+			sort.SliceStable(rows, func(a, b int) bool { return rows[a]["port_idx"].(int) < rows[b]["port_idx"].(int) })
 		}
 		m["port_table"] = rows
 		m["has_eth1"] = len(phys) > 1

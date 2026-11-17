@@ -95,6 +95,17 @@ func TestPortTableRearUplink(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("port_table = %v, want %v", got, want)
 	}
+	// AC-IW (uplink port 3) on an AP with three LAN ports: lan3 goes after it.
+	s.RearUplink = 3
+	s.Ports = append(s.Ports, Port{Name: "lan3", MAC: "08:55:66:77:00:01", BridgePort: 3})
+	rows, _ = s.Fields(nil, CfgInfo{}, nil)["port_table"].([]map[string]any)
+	got = nil
+	for _, r := range rows {
+		got = append(got, r["port_idx"], r["ifname"])
+	}
+	if want := []any{1, "lan1", 2, "lan2", 3, "wan", 4, "lan3"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("AC-IW port_table = %v, want %v", got, want)
+	}
 	s.RearUplink = 0
 	rows, _ = s.Fields(nil, CfgInfo{}, nil)["port_table"].([]map[string]any)
 	if rows[0]["port_idx"] != 1 || rows[0]["name"] != "Main" || rows[0]["ifname"] != "wan" {

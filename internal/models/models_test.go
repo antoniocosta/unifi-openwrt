@@ -31,7 +31,7 @@ func TestSuggest(t *testing.T) {
 }
 
 func TestRearUplinkPort(t *testing.T) {
-	for code, want := range map[string]int{"U6IW": 5, "U6ENTIW": 5, "U7PG2": 0} {
+	for code, want := range map[string]int{"U6IW": 5, "U6ENTIW": 5, "U7IW": 3, "U7PG2": 0} {
 		m, ok := Lookup(code)
 		if !ok || m.RearUplinkPort() != want {
 			t.Errorf("%s: RearUplinkPort = %d (found %v), want %d", code, m.RearUplinkPort(), ok, want)
