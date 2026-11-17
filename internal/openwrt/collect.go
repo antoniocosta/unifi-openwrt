@@ -163,6 +163,9 @@ type Snapshot struct {
 	Ports    []Port
 	ARP      map[string]string // mac -> ip
 	FDB      []FDBEntry        // br-lan forwarding database
+	// UplinkName: the port that is always the uplink (-uplink-port, not
+	// read from the AP); empty = found from the gateway's FDB entry.
+	UplinkName string
 }
 
 // FDBEntry is one row of the br-lan forwarding database

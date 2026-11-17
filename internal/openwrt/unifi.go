@@ -285,10 +285,15 @@ func (s *Snapshot) radio(phy string) *Radio {
 	return nil
 }
 
-// uplinkPort: the wired port the gateway is behind; failing that, the
-// wired port that is up (prefer a "lan" port, as on the OnHub where the
-// cable is in its LAN port).
+// uplinkPort: the port named by UplinkName; else the wired port the
+// gateway is behind; failing that, the wired port that is up (prefer a "lan"
+// port, as on the OnHub where the cable is in its LAN port).
 func (s *Snapshot) uplinkPort() *Port {
+	for i := range s.Ports {
+		if s.UplinkName != "" && s.Ports[i].Name == s.UplinkName {
+			return &s.Ports[i]
+		}
+	}
 	if p := s.gatewayPort(); p != nil {
 		return p
 	}

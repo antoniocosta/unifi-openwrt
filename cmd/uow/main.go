@@ -56,6 +56,7 @@ func main() {
 	apKH := flag.String("ap-known-hosts", "ap_known_hosts", "known_hosts with the AP's key")
 	hostname := flag.String("hostname", "OpenWrt", "hostname reported to the controller")
 	wifiCaps := flag.Int("wifi-caps", 0, "UNIFI_WIFI_CAP bitmap to claim (131072 = WPA3); only what the AP can do")
+	uplinkName := flag.String("uplink-port", "", "port that is always the uplink (e.g. wan); empty = the port the gateway is behind")
 	flag.BoolVar(&meshUplink, "mesh-uplink", false, "join the site's mesh as a wireless uplink when no cable has link (AP-side watcher)")
 	flag.IntVar(&hwCaps, "hw-caps", 0, "hw_caps to claim (2 = LED colour, 16384 = LED brightness); 0 = the model's")
 	flag.StringVar(&portalListen, "portal-listen", "", "guest portal redirect endpoint (UniFi APs: :8882); empty = off")
@@ -204,6 +205,7 @@ func main() {
 			} else {
 				lastErr = ""
 			}
+			s.UplinkName = *uplinkName
 			cfg, _ := os.ReadFile(filepath.Join(*stateDir, "system_cfg.txt"))
 			info := openwrt.InfoFromCfg(string(cfg))
 			info.Authorized = map[string]bool{}

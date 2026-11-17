@@ -286,7 +286,8 @@ and old mesh values would otherwise keep a mesh signal bar on the map.
 The uplink port is the up port whose br-lan FDB entry holds the gateway's
 MAC (from the ARP table), so a cable in the WAN port next to a client in a
 LAN port is still told apart. Without that entry the first up `lan*` port
-is the uplink, as before.
+is the uplink, as before. `-uplink-port` (UCI `uplink_port`) names the
+uplink port outright and skips both.
 
 Every other br-lan port carries a `mac_table` (`mac`, `age`, `vlan`,
 `static`), read from `/sys/class/net/br-lan/brforward` with busybox

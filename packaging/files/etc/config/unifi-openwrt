@@ -25,3 +25,6 @@ config unifi 'main'
 	# idle LED effect instead of steady blue: 'rainbow' (APs with RGB LED rings,
 	# e.g. the OnHub); empty = blue, like the UniFi model
 	option led_idle ''
+	# port that is always the uplink, e.g. 'wan' (empty = the port the gateway
+	# is behind, else the first lan port with link)
+	option uplink_port ''

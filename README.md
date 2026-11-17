@@ -84,7 +84,8 @@ device.
    The inform URL needs an IP address, not a host name. Other options in the
    file: `hostname`, `profile_caps`, `locate_beep`, `mesh_uplink`,
    `ssh_port` (adoption SSH responder, default 2222), `hw_caps`,
-   `inform_every`, `led_idle`.
+   `inform_every`, `led_idle`, `uplink_port` (the port that is always the
+   uplink, e.g. `wan`).
 5. **Adopt.** The AP shows up in the UniFi as pending adoption, with the
    chosen model's name. Click Adopt.
 6. **Watch the log:** `logread -e uow`. It shows the adoption, every plan of

@@ -23,6 +23,7 @@ start_service() {
 	config_get hw_caps main hw_caps 0
 	config_get inform_every main inform_every 0
 	config_get led_idle main led_idle ''
+	config_get uplink_port main uplink_port ''
 	mkdir -p "$STATE"; chmod 700 /etc/unifi-openwrt "$STATE"
 
 	procd_open_instance
@@ -37,6 +38,7 @@ start_service() {
 	[ "$hw_caps" != 0 ] && procd_append_param command -hw-caps "$hw_caps"
 	[ "$inform_every" != 0 ] && procd_append_param command -inform-every "${inform_every}s"
 	[ -n "$led_idle" ] && procd_append_param command -led-idle "$led_idle"
+	[ -n "$uplink_port" ] && procd_append_param command -uplink-port "$uplink_port"
 	procd_set_param respawn 3600 10 0
 	procd_set_param stdout 1
 	procd_set_param stderr 1
