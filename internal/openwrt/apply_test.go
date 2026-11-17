@@ -80,6 +80,28 @@ func TestApplyScriptRollback(t *testing.T) {
 	}
 }
 
+// With no scan interface, iw fails (ENODEV, exit 237); under set -e that
+// must not end the apply before the Wi-Fi reload.
+func TestApplyScriptNoScanIface(t *testing.T) {
+	_, sc, err := applyScript([]translate.Op{{Key: "wireless.radio0.channel", Value: "36"}}, time.Minute, "ID3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var line string
+	for _, l := range strings.Split(sc, "\n") {
+		if strings.Contains(l, "iw dev "+ScanIface+" del") && strings.Contains(l, "wifi reload") {
+			line = l
+		}
+	}
+	if line == "" {
+		t.Fatalf("no reload line in:\n%s", sc)
+	}
+	out, err := exec.Command("sh", "-c", "set -e; iw() { return 237; }; wifi() { echo reloaded; }; "+line).CombinedOutput()
+	if err != nil || strings.TrimSpace(string(out)) != "reloaded" {
+		t.Errorf("%q: %v %s", line, err, out)
+	}
+}
+
 func TestApplyScriptSyntax(t *testing.T) {
 	_, sc, err := applyScript([]translate.Op{{Key: "wireless.radio0.txpower", Value: "20"}, {Key: "network.lan.proto", Value: "dhcp"}, {Key: "system.@system[0].timezone", Value: "EST5EDT,M3.2.0,M11.1.0"}}, time.Minute, "ID2")
 	if err != nil {

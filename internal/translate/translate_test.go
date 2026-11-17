@@ -182,6 +182,21 @@ func TestUnknownRadioIgnored(t *testing.T) {
 	}
 }
 
+// Two 5 GHz radios: with Sections each reported radio sets its own
+// wifi-device; without, both would land on the first 5 GHz one.
+func TestRadioSections(t *testing.T) {
+	c := cfg + "radio.3.phyname=wifi2\nradio.3.ieee_mode=11naht40\nradio.3.channel=149\n"
+	f := Features{Phys: map[string]string{"wifi0": "2g", "wifi1": "5g", "wifi2": "5g"},
+		Sections: map[string]string{"wifi0": "radio0", "wifi1": "radio1", "wifi2": "radio2"}}
+	got := map[string]string{}
+	for _, op := range Plan(ParseCfg(c), ParseUCI(cur), f).Ops {
+		got[op.Key] = op.Value
+	}
+	if got["wireless.radio2.channel"] != "149" || got["wireless.radio1.channel"] == "149" {
+		t.Errorf("wifi2's channel must go to radio2 only: %v", got)
+	}
+}
+
 func TestMacACL(t *testing.T) {
 	base := `wireless.1.devname=wifi0ap0
 wireless.1.id=x

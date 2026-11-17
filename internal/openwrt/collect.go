@@ -17,6 +17,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -129,6 +130,7 @@ for i in $(ubus call iwinfo devices | jsonfilter -e '@.devices[*]'); do
   echo "=== survey $i"; iw dev $i survey dump | grep -A6 'in use'
   echo "=== stats $i"; for f in rx_bytes tx_bytes rx_packets tx_packets rx_errors tx_errors rx_dropped tx_dropped; do printf '%s=%s\n' $f $(cat /sys/class/net/$i/statistics/$f); done
 done
+echo "=== wstatus"; ubus call network.wireless status 2>/dev/null
 for e in $(ls /sys/class/net); do
   [ -e /sys/class/net/$e/phy80211 ] && continue
   case $e in lo|br-*|eth*) continue;; esac
@@ -185,6 +187,7 @@ type FDBEntry struct {
 
 type Radio struct {
 	Iface, Phy  string
+	Section     string // UCI wifi-device (radio0, ...) from network.wireless status
 	Mode        string // iwinfo mode: "Master" (AP), "Client" (STA: mesh uplink), ...
 	Band        string // "ng" (2.4 GHz) or "na" (5 GHz)
 	SSID, BSSID string
@@ -347,7 +350,7 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 	for i := range radios {
 		sort.Slice(radios[i].VAPs, func(a, b int) bool { return radios[i].VAPs[a].Iface < radios[i].VAPs[b].Iface })
 	}
-	s.Radios = radios
+	s.Radios = withDevices(radios, parseWirelessStatus(secs.get("wstatus")))
 	sort.SliceStable(s.Radios, func(i, j int) bool { return s.Radios[i].Band > s.Radios[j].Band }) // ng before na
 	return s, nil
 }
@@ -371,6 +374,76 @@ func parseFDB(b []byte) []FDBEntry {
 		})
 	}
 	return out
+}
+
+// wifiDevice is one radio of "ubus call network.wireless status".
+type wifiDevice struct {
+	Section, Band string // band in UniFi names: ng, na, 6e
+	Channel       int    // 0 = auto
+	Width         int    // MHz, from htmode
+	Ifaces        []string
+}
+
+func parseWirelessStatus(b []byte) []wifiDevice {
+	var st map[string]struct {
+		Disabled bool `json:"disabled"`
+		Config   struct {
+			Band, Channel, HTMode string
+		} `json:"config"`
+		Interfaces []struct {
+			Ifname string `json:"ifname"`
+		} `json:"interfaces"`
+	}
+	if json.Unmarshal(b, &st) != nil {
+		return nil
+	}
+	name := map[string]string{"2g": "ng", "5g": "na", "6g": "6e"}
+	var out []wifiDevice
+	for sec, r := range st {
+		band := name[r.Config.Band]
+		if r.Disabled || band == "" {
+			continue
+		}
+		d := wifiDevice{Section: sec, Band: band, Channel: int(atoi(r.Config.Channel)), Width: 20}
+		if w := atoi(strings.Trim(r.Config.HTMode, "EHTV+-")); w > 20 {
+			d.Width = int(w)
+		}
+		for _, i := range r.Interfaces {
+			if i.Ifname != "" {
+				d.Ifaces = append(d.Ifaces, i.Ifname)
+			}
+		}
+		out = append(out, d)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Section < out[j].Section })
+	return out
+}
+
+// withDevices takes each radio's band from its wifi-device (an interface
+// waiting on DFS or failed to start has frequency 0, which read as 2.4 GHz)
+// and adds the enabled wifi-devices that have no interface up, so the
+// controller sees every band, as a UniFi AP reports its radios with or
+// without WLANs. Without the status the radios stay as read from iwinfo.
+func withDevices(radios []Radio, devs []wifiDevice) []Radio {
+	for _, d := range devs {
+		found := false
+		for i := range radios {
+			for _, v := range radios[i].VAPs {
+				if slices.Contains(d.Ifaces, v.Iface) {
+					radios[i].Section, radios[i].Band, found = d.Section, d.Band, true
+				}
+			}
+		}
+		if !found {
+			radios = append(radios, Radio{Section: d.Section, Band: d.Band, Channel: d.Channel, Width: d.Width})
+		}
+	}
+	for i := range radios {
+		if radios[i].Band == "" {
+			radios[i].Band = "ng" // no frequency and no wifi-device: the old guess
+		}
+	}
+	return radios
 }
 
 func parseRadio(iface, phy string, secs *secMap) (Radio, error) {
@@ -397,6 +470,8 @@ func parseRadio(iface, phy string, secs *secMap) (Radio, error) {
 	r.Channel, r.TxPower, r.Noise, r.HWName = info.Channel, info.TxPower, info.Noise, info.Hardware.Name
 	r.Band = "na"
 	switch {
+	case info.Frequency == 0:
+		r.Band = "" // not on a channel (DFS wait, failed start): see withDevices
 	case info.Frequency < 3000:
 		r.Band = "ng"
 	case info.Frequency > 5925:

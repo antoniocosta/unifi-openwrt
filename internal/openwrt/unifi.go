@@ -314,6 +314,9 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 }
 
 func (s *Snapshot) radio(phy string) *Radio {
+	if phy == "" {
+		return nil // a wifi-device with no interface up
+	}
 	for i := range s.Radios {
 		if s.Radios[i].Phy == phy {
 			return &s.Radios[i]
@@ -493,6 +496,18 @@ func (s *Snapshot) RadioNames() map[string]string {
 			b = "6g"
 		}
 		m[fmt.Sprintf("wifi%d", i)] = b
+	}
+	return m
+}
+
+// RadioSections maps the radio names we report (wifiN) to their UCI
+// wifi-device, for radios whose device is known.
+func (s *Snapshot) RadioSections() map[string]string {
+	m := map[string]string{}
+	for i, r := range s.Radios {
+		if r.Section != "" {
+			m[fmt.Sprintf("wifi%d", i)] = r.Section
+		}
 	}
 	return m
 }

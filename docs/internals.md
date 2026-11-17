@@ -204,7 +204,7 @@ A requested feature the AP lacks is left off and noted ("clamped").
 
 | system_cfg | OpenWrt |
 |---|---|
-| `radio.N.channel`, `ieee_mode` (`11nght20`, `11naht40`, `11acvht80`, ...), `txpower` (`auto` or dBm), `countrycode` | `wifi-device` `channel`, `htmode`, `txpower` (deleted for auto), `country`. Radios are matched by band, not by phy number (phys can renumber after a reboot) |
+| `radio.N.channel`, `ieee_mode` (`11nght20`, `11naht40`, `11acvht80`, ...), `txpower` (`auto` or dBm), `countrycode` | `wifi-device` `channel`, `htmode`, `txpower` (deleted for auto), `country`. Each reported radio maps to its own `wifi-device` (from `ubus call network.wireless status`), so two radios of one band (5 GHz low and high) stay apart; without that status a band maps to its first `wifi-device`. Never by phy number (phys can renumber after a reboot) |
 | `radio.outdoor=enabled` | `country3 0x4f` + `ieee80211d 1` (the Country IE environment byte; channel rules stay the country's) |
 | `wireless.N` + `aaa.N` (one per radio x WLAN) | a `wifi-iface` per radio: `ssid`, `hidden`, `isolate` (`l2_isolation`), `uapsd`, `dtim_period`, `disabled`, `network`. Matched to an existing interface by SSID and radio, else created as `unifi_<radio>_<N>` |
 | `aaa.N.wpa`, `wpa.key.N.mgmt`, `wpa3.support`, `wpa3.transition`, `pmf.*` | `encryption` (`psk2+ccmp`, `sae`, `sae-mixed`, ...), `ieee80211w`, `key`. A WPA2/WPA3 WLAN arrives as `mgmt=SAE` plus `wpa3.transition=enabled` |
@@ -288,6 +288,16 @@ Clients are only in `vap_table[].sta_table[]` (never top level): `mac`,
 
 The controller hides its own element-adopt and mesh VAPs in its device
 view but keeps the user ones.
+
+### Radios: `radio_table`
+
+The radios are the enabled `wifi-device`s of `ubus call network.wireless
+status`, each with its band from UCI, plus what iwinfo reads from its AP
+interfaces (channel, power, stations). A radio with no interface up (no WLAN
+yet, or waiting on DFS) is still reported, with the UCI channel and width,
+as a UniFi AP lists its radios with or without WLANs: otherwise a freshly
+adopted AP shows no band and the controller cannot put a WLAN on it. An
+interface on no channel (frequency 0) takes the band of its `wifi-device`.
 
 ### Ports: `if_table`, `port_table`
 
@@ -778,6 +788,9 @@ drops BSS entries after about 30 s).
 - A **spare radio** (a phy with no interfaces in UCI) is used first: the
   daemon adds a listen-only interface `uowscan0` there, with no UCI change
   and no Wi-Fi reload, and the collector hides it from the controller.
+  Every Wi-Fi reload of an apply deletes it first: the radio may be about
+  to get an AP interface, and the daemon adds it again on a radio that is
+  still free.
 - An RF scan on a radio with clients disconnects them, as on a real UAP.
 
 ath10k limits seen: a full-band scan from an AP-mode 5 GHz interface may only

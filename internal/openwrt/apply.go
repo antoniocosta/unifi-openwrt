@@ -119,7 +119,9 @@ func applyScript(ops []translate.Op, rollback time.Duration, id string) (string,
 		commit = append(commit, "uci commit "+p)
 		switch p {
 		case "wireless":
-			reload = append(reload, "wifi reload")
+			// the scan interface may sit on a radio that gets an AP now;
+			// usually it is not there (set -e: iw's ENODEV must not stop us)
+			reload = append(reload, "iw dev "+ScanIface+" del 2>/dev/null || true; wifi reload")
 		case "system":
 			reload = append(reload, "/etc/init.d/system reload; /etc/init.d/sysntpd restart")
 		case "network":
@@ -241,7 +243,7 @@ func (cl *Client) Features() translate.Features {
 	}
 	f := translate.Features{K: has["11k"], V: has["11v"], R: has["11r"]}
 	if snap, err := cl.Collect(); err == nil {
-		f.Phys = snap.RadioNames()
+		f.Phys, f.Sections = snap.RadioNames(), snap.RadioSections()
 	}
 	return f
 }

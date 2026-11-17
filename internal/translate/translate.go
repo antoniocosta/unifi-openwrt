@@ -102,6 +102,10 @@ type Features struct {
 	// ("wifi0" -> "2g"). When set, system_cfg radios with other names are
 	// ignored (the controller can remember radios that do not exist).
 	Phys map[string]string
+	// Sections: the UCI wifi-device behind each reported radio name. With
+	// two radios in one band (5 GHz low and high) each name keeps its own
+	// device; without it a band maps to its first wifi-device.
+	Sections map[string]string
 }
 
 // Plan computes the UCI changes that make the AP match system_cfg. Settings
@@ -130,6 +134,9 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 		}
 		phyBand[phy] = band
 		sec, ok := radios[band]
+		if s := f.Sections[phy]; s != "" {
+			sec, ok = s, true
+		}
 		if !ok {
 			r.Notes = append(r.Notes, fmt.Sprintf("radio.%s (%s, %s): no %s radio on this AP, skipped", n, phy, mode, band))
 			continue
@@ -183,6 +190,9 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 		}
 		band, known := phyBand[cfg[w+"parent"]]
 		sec, ok := radios[band]
+		if s := f.Sections[cfg[w+"parent"]]; s != "" {
+			sec, ok = s, true
+		}
 		if !known || !ok {
 			r.Notes = append(r.Notes, fmt.Sprintf("wireless.%s (%q on %s): radio not on this AP, ignored", n, cfg[w+"ssid"], cfg[w+"parent"]))
 			continue
