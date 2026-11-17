@@ -132,6 +132,7 @@ done
 for e in $(ls /sys/class/net); do
   [ -e /sys/class/net/$e/phy80211 ] && continue
   case $e in lo|br-*|eth*) continue;; esac
+  [ -e /sys/class/net/$e/device ] || continue # virtual (miireg, tunnels, VLANs)
   echo "=== port $e"; printf 'mac=%s\nspeed=%s\nduplex=%s\noper=%s\n' $(cat /sys/class/net/$e/address) $(cat /sys/class/net/$e/speed 2>/dev/null || echo 0) $(cat /sys/class/net/$e/duplex 2>/dev/null || echo unknown) $(cat /sys/class/net/$e/operstate)
   for f in rx_bytes tx_bytes rx_packets tx_packets; do printf '%s=%s\n' $f $(cat /sys/class/net/$e/statistics/$f); done
   b=$(readlink /sys/class/net/$e/brport/bridge 2>/dev/null)

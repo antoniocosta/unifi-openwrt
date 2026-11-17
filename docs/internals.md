@@ -272,6 +272,10 @@ view but keeps the user ones.
 
 ### Ports: `if_table`, `port_table`
 
+Ports are the interfaces with a `device` link in sysfs, other than `eth*`
+(the CPU port behind DSA), bridges and radios; virtual ones (`miireg` on the
+Linksys MX4300, tunnels, VLAN devices) have none and are left out.
+
 `if_table[0]` (`eth0`, with `num_port`) and `port_table` (port 1 = the
 uplink port, then the others: `media`, `speed`, `full_duplex`, `up`,
 `is_uplink`, counters). The controller builds `ethernet_table` from these and
