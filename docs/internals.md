@@ -298,6 +298,9 @@ yet, or waiting on DFS) is still reported, with the UCI channel and width,
 as a UniFi AP lists its radios with or without WLANs: otherwise a freshly
 adopted AP shows no band and the controller cannot put a WLAN on it. An
 interface on no channel (frequency 0) takes the band of its `wifi-device`.
+The radios are named `wifiN` in band order (2.4, 5, 6 GHz) and, within a
+band, by `wifi-device` section, so the names do not move when an idle radio
+comes up.
 
 ### Ports: `if_table`, `port_table`
 

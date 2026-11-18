@@ -352,7 +352,15 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 		sort.Slice(radios[i].VAPs, func(a, b int) bool { return radios[i].VAPs[a].Iface < radios[i].VAPs[b].Iface })
 	}
 	s.Radios = withDevices(radios, parseWirelessStatus(secs.get("wstatus")))
-	sort.SliceStable(s.Radios, func(i, j int) bool { return s.Radios[i].Band > s.Radios[j].Band }) // ng before na
+	// ng before na; within a band by wifi-device, so the names we report
+	// (wifiN) stay put when an idle radio comes up
+	sort.SliceStable(s.Radios, func(i, j int) bool {
+		a, b := s.Radios[i], s.Radios[j]
+		if a.Band != b.Band {
+			return a.Band > b.Band
+		}
+		return a.Section != "" && b.Section != "" && a.Section < b.Section
+	})
 	return s, nil
 }
 

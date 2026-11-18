@@ -4,6 +4,7 @@ package openwrt
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -35,11 +36,27 @@ func TestRadiosFromWirelessStatus(t *testing.T) {
 	if got := s.RadioNames(); !reflect.DeepEqual(got, map[string]string{"wifi0": "2g", "wifi1": "5g", "wifi2": "5g"}) {
 		t.Errorf("radios = %v, want one 2.4 GHz and two 5 GHz (radio3 is disabled)", got)
 	}
-	if got := s.RadioSections(); !reflect.DeepEqual(got, map[string]string{"wifi0": "radio1", "wifi1": "radio2", "wifi2": "radio0"}) {
-		t.Errorf("sections = %v", got)
+	want := map[string]string{"wifi0": "radio1", "wifi1": "radio0", "wifi2": "radio2"}
+	if got := s.RadioSections(); !reflect.DeepEqual(got, want) {
+		t.Errorf("sections = %v, want %v", got, want)
 	}
-	if r := s.Radios[2]; r.Phy != "" || len(r.VAPs) != 0 || r.Width != 80 || r.Channel != 0 {
+	if r := s.Radios[1]; r.Phy != "" || len(r.VAPs) != 0 || r.Width != 80 || r.Channel != 0 {
 		t.Errorf("idle radio = %+v", r)
+	}
+
+	// radio0 comes up (phy0, first in iwinfo order): the names must not move
+	up := strings.Replace(out, `"interfaces":[{"section":"default_radio0"}]`, `"interfaces":[{"ifname":"phy0-ap0"}]`, 1)
+	up = strings.Replace(up, "=== iface phy1-ap0 phy1", `=== iface phy0-ap0 phy0
+{"ssid":"x","bssid":"02:00:00:00:00:00","mode":"Master","channel":36,"frequency":5180}
+=== assoc phy0-ap0
+{"results":[]}
+=== iface phy1-ap0 phy1`, 1)
+	s2, err := Parse([]byte(up), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s2.RadioSections(); !reflect.DeepEqual(got, want) {
+		t.Errorf("after radio0 came up: sections = %v, want %v (wifi1/wifi2 swapped)", got, want)
 	}
 	rt := s.Fields(nil, CfgInfo{}, nil)["radio_table"].([]map[string]any)
 	if len(rt) != 3 || rt[2]["radio"] != "na" {
