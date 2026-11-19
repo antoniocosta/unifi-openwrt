@@ -334,24 +334,31 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 	}
 	s.FDB = parseFDB(secs.get("fdb"))
 	s.LLDP = parseLLDP(secs.get("lldp"))
-	// Group interfaces by phy: one radio per phy, its interfaces as VAPs.
+	// Group interfaces into radios: one radio per wifi-device when the
+	// status names the interface's wifi-device, else one per phy. A
+	// multi-radio wiphy (ath12k on ipq95xx: one phy "wl0" for 2.4, 5 and 6
+	// GHz) has several wifi-devices on one phy; grouping by phy alone made
+	// it one radio, and the controller's WLANs on the other bands were
+	// dropped as "radio not on this AP".
+	devs := parseWirelessStatus(secs.get("wstatus"))
 	var radios []Radio
 	idx := map[string]int{}
 	for _, r := range s.Radios {
-		i, ok := idx[r.Phy]
+		key := radioKey(r, devs)
+		i, ok := idx[key]
 		if !ok {
 			base := r
 			base.SSID, base.BSSID, base.Stats, base.Stations = "", "", nil, nil
 			radios = append(radios, base)
 			i = len(radios) - 1
-			idx[r.Phy] = i
+			idx[key] = i
 		}
 		radios[i].VAPs = append(radios[i].VAPs, r)
 	}
 	for i := range radios {
 		sort.Slice(radios[i].VAPs, func(a, b int) bool { return radios[i].VAPs[a].Iface < radios[i].VAPs[b].Iface })
 	}
-	s.Radios = withDevices(radios, parseWirelessStatus(secs.get("wstatus")))
+	s.Radios = withDevices(radios, devs)
 	// ng before na; within a band by wifi-device, so the names we report
 	// (wifiN) stay put when an idle radio comes up
 	sort.SliceStable(s.Radios, func(i, j int) bool {
@@ -426,6 +433,17 @@ func parseWirelessStatus(b []byte) []wifiDevice {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Section < out[j].Section })
 	return out
+}
+
+// radioKey is the radio an interface belongs to: its wifi-device section
+// when the wireless status lists the interface, else its phy.
+func radioKey(r Radio, devs []wifiDevice) string {
+	for _, d := range devs {
+		if slices.Contains(d.Ifaces, r.Iface) {
+			return "dev " + d.Section
+		}
+	}
+	return "phy " + r.Phy
 }
 
 // withDevices takes each radio's band from its wifi-device (an interface

@@ -64,6 +64,51 @@ func TestRadiosFromWirelessStatus(t *testing.T) {
 	}
 }
 
+// One wiphy for three bands (ath12k multi-radio, e.g. TP-Link Archer BE800 on
+// ipq95xx): every interface is on phy "wl0", but each wifi-device is its own
+// radio. Grouping by phy alone reported one radio once WLANs were up.
+func TestRadiosMultiRadioWiphy(t *testing.T) {
+	out := `=== board
+{"hostname":"ap","model":"m","release":{"description":"OpenWrt"}}
+=== iface wl0.0-ap0 wl0
+{"ssid":"x","bssid":"02:00:00:00:00:00","mode":"Master","channel":33,"frequency":6115}
+=== assoc wl0.0-ap0
+{"results":[]}
+=== iface wl0.0-ap1 wl0
+{"ssid":"e","bssid":"02:00:00:00:00:10","mode":"Master","channel":33,"frequency":6115}
+=== assoc wl0.0-ap1
+{"results":[]}
+=== iface wl0.1-ap0 wl0
+{"ssid":"x","bssid":"02:00:00:00:00:01","mode":"Master","channel":36,"frequency":5180}
+=== assoc wl0.1-ap0
+{"results":[]}
+=== iface wl0.2-ap0 wl0
+{"ssid":"x","bssid":"02:00:00:00:00:02","mode":"Master","channel":3,"frequency":2422}
+=== assoc wl0.2-ap0
+{"results":[]}
+=== wstatus
+{"radio0":{"up":true,"disabled":false,"config":{"band":"6g","channel":"auto","htmode":"EHT40"},"interfaces":[{"ifname":"wl0.0-ap0"},{"ifname":"wl0.0-ap1"}]},
+ "radio1":{"up":true,"disabled":false,"config":{"band":"5g","channel":"36","htmode":"EHT40"},"interfaces":[{"ifname":"wl0.1-ap0"}]},
+ "radio2":{"up":true,"disabled":false,"config":{"band":"2g","channel":"auto","htmode":"EHT20"},"interfaces":[{"ifname":"wl0.2-ap0"}]}}
+`
+	s, err := Parse([]byte(out), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Radios) != 3 {
+		t.Fatalf("got %d radios, want 3: %+v", len(s.Radios), s.Radios)
+	}
+	want := map[string]string{"wifi0": "radio2", "wifi1": "radio1", "wifi2": "radio0"}
+	if got := s.RadioSections(); !reflect.DeepEqual(got, want) {
+		t.Errorf("sections = %v, want %v", got, want)
+	}
+	for _, r := range s.Radios {
+		if r.Section == "radio0" && len(r.VAPs) != 2 {
+			t.Errorf("6 GHz radio has %d VAPs, want 2", len(r.VAPs))
+		}
+	}
+}
+
 // Without the status (older OpenWrt, ubus error) radios stay as iwinfo has them.
 func TestRadiosWithoutWirelessStatus(t *testing.T) {
 	r := withDevices([]Radio{{Phy: "phy0", Band: "na"}, {Phy: "phy1"}}, nil)
