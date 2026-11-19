@@ -80,6 +80,10 @@ func TestApplyScriptRollback(t *testing.T) {
 	if strings.Contains(sc, "%!") {
 		t.Fatalf("format error:\n%s", sc)
 	}
+	// the timer starts with or without setsid (BusyBox may lack the applet)
+	if !strings.Contains(sc, "command -v setsid") || !strings.Contains(sc, `(trap "" HUP; exec sh /tmp/unifi-rollback-ID1.sh) </dev/null >/dev/null 2>&1 &`) {
+		t.Fatalf("rollback timer has no fallback without setsid:\n%s", sc)
+	}
 }
 
 // With no scan interface, iw fails (ENODEV, exit 237); under set -e that

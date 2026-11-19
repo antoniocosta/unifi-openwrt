@@ -149,7 +149,13 @@ logger -t unifi-openwrt "apply %[1]s not confirmed: rolling back"
 %[8]s
 RB
 chmod +x /tmp/unifi-rollback-%[1]s.sh
-setsid sh /tmp/unifi-rollback-%[1]s.sh </dev/null >/dev/null 2>&1 &
+# the timer must outlive this session; not every image has setsid (a
+# BusyBox without the applet: the timer would silently never run)
+if command -v setsid >/dev/null 2>&1; then
+	setsid sh /tmp/unifi-rollback-%[1]s.sh </dev/null >/dev/null 2>&1 &
+else
+	(trap "" HUP; exec sh /tmp/unifi-rollback-%[1]s.sh) </dev/null >/dev/null 2>&1 &
+fi
 uci batch
 %[6]s
 %[7]s
