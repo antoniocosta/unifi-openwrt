@@ -29,6 +29,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -232,6 +233,11 @@ func main() {
 		}
 		fmt.Sscan(port, &x.SSHPort)
 		allow := []string{*console}
+		// the console that adopts is the one behind the inform URL, whatever
+		// -console (health checks) says
+		if u, err := url.Parse(*informURL); err == nil && u.Hostname() != "" && u.Hostname() != *console {
+			allow = append(allow, u.Hostname())
+		}
 		if snap != nil {
 			allow = append(allow, snap.IP) // console SSH forwarded through the AP
 		}
