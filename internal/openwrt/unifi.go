@@ -215,7 +215,7 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 				// Its SSID is the vwire one, whose devname is the downlink VAP's.
 				vname = fmt.Sprintf("ath%d", nextAth-1)
 				m["uplink"] = vname
-				vaps = append(vaps, uplinkVAP(vname, name, r, v, s.ARP))
+				vaps = append(vaps, uplinkVAP(vname, name, r, v, s.neighbours()))
 				continue
 			}
 			guest := info.GuestVAP[vname]
@@ -578,6 +578,22 @@ func uplinkVAP(vname, radioName string, r, v Radio, neigh map[string]string) map
 		row["up"], row["state"] = false, "INIT"
 	}
 	return row
+}
+
+// neighbours: the MACs the AP knows on its LAN, from the ARP table and from
+// the br-lan forwarding database. A mesh child never talks IP to its parent
+// AP, so the parent's own MAC is often only in the forwarding database.
+func (s *Snapshot) neighbours() map[string]string {
+	out := make(map[string]string, len(s.ARP)+len(s.FDB))
+	for _, e := range s.FDB {
+		if !e.Local {
+			out[strings.ToLower(e.MAC)] = ""
+		}
+	}
+	for mac, ip := range s.ARP {
+		out[strings.ToLower(mac)] = ip
+	}
+	return out
 }
 
 // parentDevice finds the parent AP's own MAC among the neighbours: UniFi VAP

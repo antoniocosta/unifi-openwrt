@@ -42,3 +42,23 @@ func TestMeshUplinkFields(t *testing.T) {
 		t.Errorf("eth0 should be down while meshed: %v", it[0])
 	}
 }
+
+// The parent AP's own MAC is found in the forwarding database when the ARP
+// table does not have it (a mesh child has no IP traffic with its parent).
+func TestNeighboursFromFDB(t *testing.T) {
+	s := &Snapshot{ARP: map[string]string{"aa:bb:cc:00:00:01": "192.168.1.9"},
+		FDB: []FDBEntry{{MAC: "40:11:22:33:44:01", Port: 8}, {MAC: "5A:11:22:33:44:03", Port: 8}, {MAC: "02:aa:bb:cc:dd:01", Port: 1, Local: true}}}
+	n := s.neighbours()
+	if _, ok := n["02:aa:bb:cc:dd:01"]; ok {
+		t.Error("the AP's own address counted as a neighbour")
+	}
+	if n["aa:bb:cc:00:00:01"] != "192.168.1.9" {
+		t.Errorf("ARP entry lost: %v", n)
+	}
+	if got := parentDevice("5a:11:22:33:44:03", n); got != "40:11:22:33:44:01" {
+		t.Errorf("parent device = %q, want the AP's own MAC from the FDB", got)
+	}
+	if got := parentDevice("5a:11:22:33:44:03", s.ARP); got != "" {
+		t.Errorf("ARP alone should not find the parent, got %q", got)
+	}
+}
