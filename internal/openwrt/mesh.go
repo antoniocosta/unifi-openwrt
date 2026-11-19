@@ -19,6 +19,8 @@ STA=unifi_mesh
 wired() {
 	for p in $(ubus call network.device status | jsonfilter -e '@["br-lan"]["bridge-members"][*]'); do
 		case "$p" in phy*|wlan*|mesh*) continue ;; esac
+		# any Wi-Fi interface, whatever its name (e.g. wl0.1-ap0 on ath12k MLO builds)
+		[ -e /sys/class/net/$p/phy80211 ] && continue
 		[ "$(cat /sys/class/net/$p/carrier 2>/dev/null)" = 1 ] && return 0
 	done
 	return 1
