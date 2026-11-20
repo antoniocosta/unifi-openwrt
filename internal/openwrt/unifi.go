@@ -265,6 +265,9 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 				txPk += st.TxPackets
 				sig += st.Signal
 			}
+			// a platform with radio-wide 802.11 counters and none per client
+			// (AirPort) passes them in the VAP's stats
+			retries, failed, txPk = max(retries, v.Stats["wifi_retries"]), max(failed, v.Stats["wifi_failed"]), max(txPk, v.Stats["wifi_tx"])
 			vap := map[string]any{
 				"name": vname, "radio_name": name, "radio": r.Band,
 				"essid": v.SSID, "bssid": v.BSSID, "channel": r.Channel, "tx_power": r.TxPower,

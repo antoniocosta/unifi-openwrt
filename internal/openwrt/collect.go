@@ -12,6 +12,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/bits"
 	"net"
@@ -34,6 +35,12 @@ type Target struct {
 	User       string
 	KeyFile    string // private key (the daemon's own)
 	KnownHosts string // known_hosts file with the AP's host key
+	// Platform: "" = OpenWrt; PlatformAirPort = an Apple AirPort base station
+	// over its debug SSH login (read-only, see airport.go).
+	Platform string
+	// Password: log in with this password instead of the key (the AirPort's
+	// root password is its admin password; it has no authorized_keys).
+	Password string
 }
 
 type Client struct {
@@ -48,24 +55,37 @@ func (cl *Client) conn() (*ssh.Client, error) {
 	if cl.c != nil {
 		return cl.c, nil
 	}
-	key, err := os.ReadFile(cl.t.KeyFile)
-	if err != nil {
-		return nil, err
-	}
-	signer, err := ssh.ParsePrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
 	hk, err := knownhosts.New(cl.t.KnownHosts)
 	if err != nil {
 		return nil, err
 	}
-	c, err := ssh.Dial("tcp", cl.t.Addr, &ssh.ClientConfig{
-		User: cl.t.User, Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: hk, Timeout: 8 * time.Second,
+	conf := &ssh.ClientConfig{
+		User: cl.t.User, HostKeyCallback: hk, Timeout: 8 * time.Second,
 		// Match the key type recorded in known_hosts (OpenSSH stored ed25519).
 		HostKeyAlgorithms: []string{ssh.KeyAlgoED25519},
-	})
+	}
+	if cl.t.Password != "" {
+		conf.Auth = []ssh.AuthMethod{ssh.Password(cl.t.Password)}
+	} else {
+		key, err := os.ReadFile(cl.t.KeyFile)
+		if err != nil {
+			return nil, err
+		}
+		signer, err := ssh.ParsePrivateKey(key)
+		if err != nil {
+			return nil, err
+		}
+		conf.Auth = []ssh.AuthMethod{ssh.PublicKeys(signer)}
+	}
+	if cl.t.Platform == PlatformAirPort {
+		// OpenSSH 5.9 on the base station: RSA host key and the algorithms of
+		// its time, none of which are in the library's defaults.
+		conf.HostKeyAlgorithms = []string{ssh.KeyAlgoRSA}
+		conf.KeyExchanges = []string{"diffie-hellman-group14-sha1"}
+		conf.Ciphers = []string{"aes128-ctr", "aes256-ctr", "aes128-cbc"}
+		conf.MACs = []string{"hmac-sha1"}
+	}
+	c, err := ssh.Dial("tcp", cl.t.Addr, conf)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +96,17 @@ func (cl *Client) conn() (*ssh.Client, error) {
 // Run runs one command and returns stdout. The connection is reused and
 // re-dialled after an error.
 func (cl *Client) Run(cmd string) ([]byte, error) {
+	if cl.t.Platform == PlatformAirPort {
+		// Everything else in this package speaks uci, ubus and iwinfo.
+		return nil, ErrAirPort
+	}
+	return cl.run(cmd)
+}
+
+// ErrAirPort is returned for anything but reading an AirPort base station.
+var ErrAirPort = errors.New("not supported on an AirPort base station (read-only)")
+
+func (cl *Client) run(cmd string) ([]byte, error) {
 	if cl.t.Addr == "local" {
 		return localRun(cmd, nil)
 	}
@@ -244,6 +275,13 @@ type Port struct {
 
 // Collect reads the AP once.
 func (cl *Client) Collect() (*Snapshot, error) {
+	if cl.t.Platform == PlatformAirPort {
+		out, err := cl.run(airportScript)
+		if err != nil {
+			return nil, err
+		}
+		return ParseAirPort(out, time.Now())
+	}
 	out, err := cl.Run(collectScript)
 	if err != nil {
 		return nil, err

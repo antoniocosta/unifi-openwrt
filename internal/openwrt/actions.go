@@ -39,6 +39,11 @@ func (cl *Client) SetLED(mode string) error {
 // Reboot restarts the AP (UniFi "Restart"). It returns before the AP goes
 // down.
 func (cl *Client) Reboot() error {
+	if cl.IsAirPort() {
+		_, err := cl.run(`(sleep 3; /sbin/reboot) >/dev/null 2>&1 </dev/null &`)
+		cl.Close()
+		return err
+	}
 	_, err := cl.Run(`logger -t unifi-openwrt "restart requested by the UniFi controller"; (sleep 3; reboot) >/dev/null 2>&1 </dev/null &`)
 	cl.Close()
 	return err
