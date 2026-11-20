@@ -192,6 +192,9 @@ func (cl *Client) LEDs() ([]LED, error) {
 
 // ShowLED puts a state on the AP's status LEDs.
 func (cl *Client) ShowLED(s LEDState) error {
+	if cl.IsAirPort() {
+		return cl.airportLED(s)
+	}
 	leds, err := cl.LEDs()
 	if err != nil {
 		return err

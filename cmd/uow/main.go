@@ -57,6 +57,8 @@ func main() {
 	apUser := flag.String("ap-user", "root", "ssh user on the AP")
 	apKey := flag.String("ap-key", "ap_ed25519", "ssh key for the AP")
 	apKH := flag.String("ap-known-hosts", "ap_known_hosts", "known_hosts with the AP's key")
+	apPlatform := flag.String("ap-platform", "", "what -ap is: empty = OpenWrt; \"airport\" = an Apple AirPort base station over its debug SSH login (read-only: reported to the controller, nothing applied)")
+	apPwFile := flag.String("ap-password-file", "", "log in to -ap with the password in this file instead of -ap-key (AirPort: the admin password)")
 	hostname := flag.String("hostname", "OpenWrt", "hostname reported to the controller")
 	wifiCaps := flag.Int("wifi-caps", 0, "UNIFI_WIFI_CAP bitmap to claim (131072 = WPA3); only what the AP can do")
 	uplinkName := flag.String("uplink-port", "", "port that is always the uplink (e.g. wan); empty = the port the gateway is behind")
@@ -93,7 +95,7 @@ func main() {
 		if addr == "" {
 			addr = "local" // on the AP itself
 		}
-		cl := openwrt.NewClient(openwrt.Target{Addr: addr, User: *apUser, KeyFile: *apKey, KnownHosts: *apKH})
+		cl := openwrt.NewClient(apTarget(addr, *apUser, *apKey, *apKH, *apPlatform, *apPwFile))
 		defer cl.Close()
 		b, err := cl.Dump()
 		if err != nil {
@@ -131,7 +133,7 @@ func main() {
 			log.Fatalf("refusing MAC %s: without -ap only a locally administered MAC is allowed", mac)
 		}
 	} else {
-		ap = openwrt.NewClient(openwrt.Target{Addr: *apAddr, User: *apUser, KeyFile: *apKey, KnownHosts: *apKH})
+		ap = openwrt.NewClient(apTarget(*apAddr, *apUser, *apKey, *apKH, *apPlatform, *apPwFile))
 		defer ap.Close()
 		if snap, err = ap.Collect(); err != nil {
 			log.Fatalf("reading the AP: %v", err)
@@ -1399,4 +1401,20 @@ func minRSSIKick(ap *openwrt.Client, s *openwrt.Snapshot) {
 			delete(lowRSSI, m)
 		}
 	}
+}
+
+// apTarget is how to reach the AP named by -ap and its companion flags.
+func apTarget(addr, user, key, knownHosts, platform, pwFile string) openwrt.Target {
+	t := openwrt.Target{Addr: addr, User: user, KeyFile: key, KnownHosts: knownHosts, Platform: platform}
+	if platform != "" && platform != openwrt.PlatformAirPort {
+		log.Fatalf("unknown -ap-platform %q (empty or %q)", platform, openwrt.PlatformAirPort)
+	}
+	if pwFile != "" {
+		b, err := os.ReadFile(pwFile)
+		if err != nil {
+			log.Fatalf("-ap-password-file: %v", err)
+		}
+		t.Password = strings.TrimRight(string(b), "\r\n")
+	}
+	return t
 }

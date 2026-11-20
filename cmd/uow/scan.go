@@ -34,6 +34,9 @@ var scans = &scanner{results: map[string]openwrt.ScanResult{}}
 // start scans in the background; force = asked for by the controller (all
 // radios, clients or not).
 func (sc *scanner) start(ap *openwrt.Client, force, spectrum bool) {
+	if ap.IsAirPort() {
+		return // read-only platform: no scans
+	}
 	sc.mu.Lock()
 	if sc.running {
 		sc.spectrum = sc.spectrum || spectrum
