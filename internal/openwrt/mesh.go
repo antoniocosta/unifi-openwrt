@@ -26,10 +26,16 @@ wired() {
 	return 1
 }
 meshing() { [ "$(uci -q get wireless.$STA)" = wifi-iface ]; }
+linked() {
+	for i in $(ubus call network.wireless status | jsonfilter -e "@.*.interfaces[@.section='$STA'].ifname"); do
+		case "$(iw dev "$i" link 2>/dev/null)" in Connected*) return 0 ;; esac
+	done
+	return 1
+}
 drop() {
 	for i in $(ubus call network.wireless status | jsonfilter -e "@.*.interfaces[@.section='$STA'].ifname"); do ip link set "$i" down; done
 	uci -q delete wireless.$STA; uci commit wireless; wifi reload
-	logger -t unifi-mesh "wired uplink back: wireless uplink removed"
+	logger -t unifi-mesh "$1: wireless uplink removed"
 }
 join() {
 	uci batch <<UCI
@@ -47,13 +53,14 @@ UCI
 	uci commit wireless; wifi reload
 	logger -t unifi-mesh "no wired uplink for 20 s: joining the mesh as a wireless uplink"
 }
-meshing && wired && drop
+meshing && wired && drop "wired uplink back"
 lost=0
+down=0
 while :; do
 	# no config (meshing off in the UniFi, or -mesh-uplink off): no wireless uplink
 	if [ ! -s "$C" ]; then
 		lost=0
-		meshing && drop
+		meshing && drop "meshing off"
 		sleep 5
 		continue
 	fi
@@ -61,10 +68,25 @@ while :; do
 	. "$C"   # MESH_SSID MESH_PSK MESH_RADIO MESH_ACCEPT (written by the daemon; re-read each loop)
 	if wired; then
 		lost=0
-		meshing && drop
+		meshing && drop "wired uplink back"
 	else
 		lost=$((lost + 1))
 		[ $lost -ge 20 ] && ! meshing && join
+		# The uplink is configured but does not associate. Seen on mwl8k after a
+		# boot with the uplink already in the config: the radio's first setup has
+		# the AP waiting for the uplink, the uplink's scans return nothing, and
+		# setting the radio up again does not help. Removing the uplink lets the
+		# AP start alone; the join above then adds it back to a running radio.
+		if meshing && ! linked; then
+			down=$((down + 1))
+			if [ $down -ge 60 ]; then
+				down=0
+				lost=0
+				drop "not associated for 60 s"
+			fi
+		else
+			down=0
+		fi
 	fi
 	sleep 1
 done
