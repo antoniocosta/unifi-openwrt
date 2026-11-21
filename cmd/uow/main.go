@@ -337,7 +337,7 @@ func main() {
 	}
 	if ap != nil {
 		if _, err := os.Stat(filepath.Join(*stateDir, "system_cfg.txt")); err == nil {
-			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL)
+			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
 		}
 		syncFT(ap)
 	}
@@ -366,7 +366,7 @@ func main() {
 			lastFT = time.Now()
 			if updateFTPeers(scans.siblingFT()) {
 				log.Printf("FT: the other APs of a WLAN offer fast roaming for other key types than this AP: planning again")
-				syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL)
+				syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
 			}
 			syncFT(ap)
 		}
@@ -383,7 +383,7 @@ func main() {
 			}
 		}
 		if ap != nil && x.S.CfgVersion != cfgBefore {
-			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL)
+			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
 			lastBan = time.Time{} // a wifi reload drops hostapd's bans
 			scans.rrmSoon()       // ... and its neighbour lists
 		}
@@ -658,11 +658,39 @@ func localIPToward(informURL string) (string, error) {
 	return c.LocalAddr().(*net.UDPAddr).IP.String(), nil
 }
 
+// aclsSynced: hostapd's MAC lists were brought in line with UCI since the
+// daemon started (see syncACLs).
+var aclsSynced bool
+
+// syncACLs brings hostapd's MAC lists in line with what UCI holds for the
+// WLAN sections of r (openwrt.Client.SyncACLs).
+func syncACLs(ap *openwrt.Client, r translate.Result, blocked []string) {
+	if len(r.ACLs) == 0 {
+		return
+	}
+	out, err := ap.Run("uci show wireless")
+	if err != nil {
+		log.Printf("MAC lists: hostapd not brought in line with the config: reading uci: %v", err)
+		aclsSynced = false
+		return
+	}
+	secs := make([]string, 0, len(r.ACLs))
+	for _, a := range r.ACLs {
+		secs = append(secs, a.Section)
+	}
+	if err := ap.SyncACLs(translate.ACLsFromUCI(translate.ParseUCI(string(out)), secs), blocked); err != nil {
+		log.Printf("MAC lists: hostapd not brought in line with the config: %v", err)
+		aclsSynced = false
+		return
+	}
+	aclsSynced = true
+}
+
 // syncAP plans the UCI changes the controller's system_cfg implies for the
 // AP and, when apply is set, applies them with an automatic rollback that is
 // cancelled only if the radios come back, the controller can still be
 // reached (a daemon on the AP) and the console stays healthy.
-func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client, base unifiapi.Health, informURL string) {
+func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client, base unifiapi.Health, informURL string, blocked []string) {
 	syncUsers(ap, cfgPath, apply)
 	defer syncGuest(ap, cfgPath, apply)
 	defer syncSteering(ap, cfgPath, apply)
@@ -699,6 +727,9 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 	for _, n := range r.Notes {
 		log.Printf("  note: %s", n)
 	}
+	if _, live := openwrt.LiveACL(r.Ops, r.ACLs); live && !apply {
+		log.Printf("  note: MAC lists only: would be applied without a Wi-Fi reload")
+	}
 	if apply {
 		if err := ap.SyncSchedules(r.Schedules); err != nil {
 			log.Printf("SCHEDULES FAILED: %v", err)
@@ -706,19 +737,34 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 			log.Printf("SCHEDULES: %d WLAN interface(s) on the AP's own schedule", len(r.Schedules))
 		}
 	}
+	if apply && len(r.Ops) == 0 && !aclsSynced {
+		syncACLs(ap, r, blocked)
+	}
 	if !apply || len(r.Ops) == 0 {
 		return
 	}
-	id, err := ap.Apply(r.Ops, 5*time.Minute)
+	ll := openwrt.LiveLists{ACLs: r.ACLs, Keep: blocked}
+	if up, _ := ap.WifiHealthy(); !up {
+		// a radio that is down already would fail the 2 s health check of a
+		// live apply and roll the MAC change back: reload as before
+		ll = openwrt.LiveLists{}
+	}
+	id, how, err := ap.Apply(r.Ops, ll, 5*time.Minute)
 	if err != nil {
 		log.Printf("APPLY FAILED (rollback armed if it got that far): %v", err)
 		if id != "" {
 			ap.RollbackNow(id)
+			time.Sleep(10 * time.Second) // the rollback's wifi restarts BSSes
+			syncACLs(ap, r, blocked)
 		}
 		return
 	}
-	log.Printf("apply %s: committed, reloading; checking (rollback in 5 min unless confirmed)", id)
-	time.Sleep(20 * time.Second)
+	log.Print(appliedMsg(id, how))
+	wait := 20 * time.Second
+	if how == "live" {
+		wait = 2 * time.Second // no reload to wait for
+	}
+	time.Sleep(wait)
 	ok, why := ap.WifiHealthy()
 	for try := 0; !ok && try < 3; try++ { // a network reload drops the SSH session; give it time
 		time.Sleep(10 * time.Second)
@@ -756,6 +802,8 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 		if err := ap.RollbackNow(id); err != nil {
 			log.Printf("rollback %s: %v (the timed rollback will still fire)", id, err)
 		}
+		time.Sleep(10 * time.Second) // the rollback's wifi restarts BSSes
+		syncACLs(ap, r, blocked)
 		return
 	}
 	if err := ap.Confirm(id); err != nil {
@@ -763,9 +811,27 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 		return
 	}
 	log.Printf("apply %s: confirmed (%s)", id, why)
+	// A live apply changed only the sections it touched: sync the rest too
+	// while an earlier sync is still owed.
+	if how != "live" || !aclsSynced {
+		syncACLs(ap, r, blocked)
+	}
 	if r2, err := plan(ap, cfgPath); err == nil {
 		log.Printf("after apply: %d change(s) left", len(r2.Ops))
 	}
+}
+
+// appliedMsg is the log line once an apply is committed (how: see
+// openwrt.Client.Apply).
+func appliedMsg(id, how string) string {
+	const check = "checking (rollback in 5 min unless confirmed)"
+	if how == "live" {
+		return fmt.Sprintf("apply %s: committed, MAC lists changed in hostapd without a Wi-Fi reload; %s", id, check)
+	}
+	if why, ok := strings.CutPrefix(how, "reload: "); ok {
+		return fmt.Sprintf("apply %s: committed, live MAC list update not possible (%s): Wi-Fi reloaded; %s", id, why, check)
+	}
+	return fmt.Sprintf("apply %s: committed, reloading; %s", id, check)
 }
 
 func plan(ap *openwrt.Client, cfgPath string) (translate.Result, error) {

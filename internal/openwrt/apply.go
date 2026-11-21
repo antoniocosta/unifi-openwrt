@@ -78,24 +78,68 @@ func uciQuote(v string) string {
 	return `"` + r.Replace(v) + `"`
 }
 
+// LiveLists is what Apply needs to change MAC filters without a Wi-Fi
+// reload (LiveACL).
+type LiveLists struct {
+	ACLs []translate.ACL // the wanted filter of every planned WLAN section
+	Keep []string        // blocked clients: never taken off a deny list
+}
+
 // Apply applies ops to the AP's wireless config with an automatic rollback:
 // the AP restores its previous config after `rollback` unless Confirm is
-// called. It returns an id for Confirm/RollbackNow.
-func (cl *Client) Apply(ops []translate.Op, rollback time.Duration) (string, error) {
+// called. It returns an id for Confirm/RollbackNow, and how the Wi-Fi took
+// the change: "reload" (the plan's normal reloads, as before), "live" (MAC
+// filters changed in hostapd, no reload; see LiveACL), or "reload:
+// <reason>" (a live change was not possible, so it reloaded).
+func (cl *Client) Apply(ops []translate.Op, ll LiveLists, rollback time.Duration) (string, string, error) {
 	id := time.Now().Format("20060102-150405")
 	batch, script, err := applyScript(ops, rollback, id)
 	if err != nil {
-		return "", err
+		return "", "", err
+	}
+	how := "reload"
+	if changed, ok := LiveACL(ops, ll.ACLs); ok {
+		if b, s, err := liveApplyScript(ops, changed, ll.Keep, rollback, id); err != nil {
+			how = "reload: " + err.Error()
+		} else {
+			batch, script, how = b, s, "live"
+		}
 	}
 	// stdin = the batch only; the script reads it via `uci batch` (stdin).
 	out, err := cl.RunStdin("sh -c "+shQuote(script), []byte(batch))
 	if err != nil {
-		return id, fmt.Errorf("apply: %v (%s)", err, strings.TrimSpace(string(out)))
+		return id, how, fmt.Errorf("apply: %v (%s)", err, strings.TrimSpace(string(out)))
 	}
 	if !strings.Contains(string(out), "applied") {
-		return id, fmt.Errorf("apply: unexpected output %q", out)
+		return id, how, fmt.Errorf("apply: unexpected output %q", out)
 	}
-	return id, nil
+	if how == "live" {
+		how = liveOutcome(string(out))
+	}
+	return id, how, nil
+}
+
+// wifiReload is an apply's Wi-Fi reload: the scan interface may sit on a
+// radio that gets an AP now; usually it is not there (set -e: iw's ENODEV
+// must not stop us).
+const wifiReload = "iw dev " + ScanIface + " del 2>/dev/null || true; wifi reload"
+
+// liveApplyScript is applyScript for a plan of MAC filter changes only
+// (LiveACL): the same backup, rollback timer and commit, with liveBlock in
+// place of the Wi-Fi reload. The rollback still restores and reloads.
+func liveApplyScript(ops []translate.Op, changed []translate.ACL, keep []string, rollback time.Duration, id string) (string, string, error) {
+	batch, script, err := applyScript(ops, rollback, id)
+	if err != nil {
+		return "", "", err
+	}
+	block, err := liveBlock(changed, keep, "/var/run", wifiReload)
+	if err != nil {
+		return "", "", err
+	}
+	if strings.Count(script, wifiReload+"\n") != 1 {
+		return "", "", fmt.Errorf("no single Wi-Fi reload in the apply script")
+	}
+	return batch, strings.Replace(script, wifiReload+"\n", block, 1), nil
 }
 
 // applyScript builds the uci batch and the shell script for Apply.
@@ -119,9 +163,7 @@ func applyScript(ops []translate.Op, rollback time.Duration, id string) (string,
 		commit = append(commit, "uci commit "+p)
 		switch p {
 		case "wireless":
-			// the scan interface may sit on a radio that gets an AP now;
-			// usually it is not there (set -e: iw's ENODEV must not stop us)
-			reload = append(reload, "iw dev "+ScanIface+" del 2>/dev/null || true; wifi reload")
+			reload = append(reload, wifiReload)
 		case "system":
 			reload = append(reload, "/etc/init.d/system reload; /etc/init.d/sysntpd restart")
 		case "network":

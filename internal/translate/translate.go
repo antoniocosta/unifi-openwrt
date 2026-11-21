@@ -91,6 +91,17 @@ type Result struct {
 	Notes     []string   // decisions and clamps worth reading
 	Skipped   []string   // system_cfg sections not handled (yet)
 	Schedules []Schedule // WLAN broadcast schedules (the AP enforces them)
+	// ACLs: the wanted MAC filter of every planned WLAN section, changed or
+	// not (openwrt.LiveACL decides from it whether a plan can be applied
+	// without a Wi-Fi reload).
+	ACLs []ACL
+}
+
+// ACL is the MAC filter a WLAN section should have.
+type ACL struct {
+	Section string   // UCI wifi-iface section, e.g. "unifi_radio0_4"
+	Policy  string   // "deny", "allow", or "" (no filter: no macfilter option)
+	MACs    []string // lower case; empty for ""
 }
 
 // handled lists system_cfg top-level sections the translator reads.
@@ -320,6 +331,16 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 		policy, macs := macACL(cfg, cfg[w+"devname"])
 		if policy != "disable" {
 			want["macfilter"] = policy
+		}
+		// a section with a macfile option gets that file's MACs added to
+		// the maclist by OpenWrt, which the live path would drop: it
+		// stays out of ACLs and takes the normal reload path
+		if cur[k+"macfile"] == "" {
+			acl := ACL{Section: ifs}
+			if policy != "disable" {
+				acl.Policy, acl.MACs = policy, macs
+			}
+			r.ACLs = append(r.ACLs, acl)
 		}
 		r.Ops = append(r.Ops, diff(k, want, cur, nil)...)
 		if policy == "disable" {

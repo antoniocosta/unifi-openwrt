@@ -225,9 +225,13 @@ part of this repository.
   the changes it would make.
 - **Automatic rollback**: Before each apply the touched UCI packages are
   backed up and an on-AP timer restores them after 5 minutes unless the
-  change is confirmed. 20 s after an apply the daemon checks that every
-  enabled radio with interfaces is up and that the controller can still
-  be reached; if not, it rolls back at once.
+  change is confirmed. 20 s after an apply (2 s after MAC list changes made
+  in hostapd) the daemon checks that every enabled radio with interfaces is
+  up and that the controller can still be reached; if not, it rolls back at
+  once.
+- **MAC lists without a Wi-Fi restart**: A plan that changes only MAC filters
+  (Lock to AP, MAC filter) is applied in the running hostapd; only the
+  clients it denies are disconnected.
 - **Never wired and mesh-uplinked at once**: The mesh watcher joins only
   after 20 s without cable link and drops the wireless uplink within a
   second of a cable coming back.

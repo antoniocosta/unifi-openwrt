@@ -144,3 +144,40 @@ func TestApplyScriptSyntax(t *testing.T) {
 		}
 	}
 }
+
+// A live plan gets today's script with only the Wi-Fi reload swapped for
+// liveBlock; the rollback still restores and reloads.
+func TestLiveApplyScript(t *testing.T) {
+	ops := []translate.Op{{Key: "wireless.s1.maclist", List: []string{"02:00:00:00:00:01"}}}
+	changed := []translate.ACL{{Section: "s1", Policy: "deny", MACs: []string{"02:00:00:00:00:01"}}}
+	keep := []string{"02:00:00:00:00:02"}
+	_, normal, err := applyScript(ops, time.Minute, "ID4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(normal, wifiReload+"\n") != 1 {
+		t.Fatalf("not one Wi-Fi reload in:\n%s", normal)
+	}
+	_, live, err := liveApplyScript(ops, changed, keep, time.Minute, "ID4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	block, err := liveBlock(changed, keep, "/var/run", wifiReload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := strings.Replace(normal, wifiReload+"\n", block, 1); live != want {
+		t.Errorf("live script is not the normal one with the reload swapped:\n%s", live)
+	}
+	rb := live[strings.Index(live, "<<'RB'"):strings.Index(live, "\nRB\n")]
+	if !strings.Contains(rb, "cp -p /etc/config/wireless.pre-unifi-ID4 /etc/config/wireless") || !strings.Contains(rb, "|| true; wifi\n") {
+		t.Errorf("rollback no longer restores and reloads:\n%s", rb)
+	}
+	for _, s := range []string{live, rb[len("<<'RB'\n"):]} {
+		c := exec.Command("sh", "-n")
+		c.Stdin = strings.NewReader(s)
+		if out, err := c.CombinedOutput(); err != nil {
+			t.Fatalf("sh -n: %v %s\n%s", err, out, s)
+		}
+	}
+}

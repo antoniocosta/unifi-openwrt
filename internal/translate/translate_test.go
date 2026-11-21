@@ -3,6 +3,7 @@
 package translate
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -469,6 +470,61 @@ func TestPlanFTSiblings(t *testing.T) {
 	} {
 		if got := opts(c.f); got != "wpa_key_mgmt="+c.want {
 			t.Errorf("%s: %q, want %q", name, got, c.want)
+		}
+	}
+}
+
+// Result.ACLs holds the wanted MAC filter of every planned WLAN section,
+// changed or not (openwrt.LiveACL decides from it).
+func TestPlanACLs(t *testing.T) {
+	base := `wireless.1.devname=wifi0ap0
+wireless.1.id=x
+wireless.1.status=enabled
+wireless.1.ssid=t
+wireless.1.parent=wifi0
+wireless.1.usage=user
+wireless.1.security=none
+radio.1.phyname=wifi0
+radio.1.mode=ng
+macacl.status=enabled
+macacl.1.status=enabled
+macacl.1.devname=wifi0ap0
+macacl.1.acl.status=enabled
+`
+	cur := "wireless.radio0=wifi-device\nwireless.radio0.band='2g'\nwireless.ap0=wifi-iface\nwireless.ap0.device='radio0'\nwireless.ap0.mode='ap'\nwireless.ap0.ssid='t'\n"
+	f := Features{Phys: map[string]string{"wifi0": "2g"}}
+	for name, c := range map[string]struct {
+		cfg, cur string
+		want     []ACL
+	}{
+		"deny two": {
+			base + "macacl.1.acl.policy=deny\nmacacl.1.acl.1.status=enabled\nmacacl.1.acl.1.mac=02:00:00:00:00:09\nmacacl.1.acl.2.status=enabled\nmacacl.1.acl.2.mac=02:00:00:00:00:0A\n",
+			cur,
+			[]ACL{{Section: "ap0", Policy: "deny", MACs: []string{"02:00:00:00:00:09", "02:00:00:00:00:0a"}}},
+		},
+		"empty deny is no filter": {
+			base + "macacl.1.acl.policy=deny\n",
+			cur + "wireless.ap0.macfilter='deny'\nwireless.ap0.maclist='02:00:00:00:00:09'\n",
+			[]ACL{{Section: "ap0"}},
+		},
+		"allow, already applied": {
+			base + "macacl.1.acl.policy=allow\nmacacl.1.acl.1.status=enabled\nmacacl.1.acl.1.mac=02:00:00:00:00:09\n",
+			cur + "wireless.ap0.macfilter='allow'\nwireless.ap0.maclist='02:00:00:00:00:09'\n",
+			[]ACL{{Section: "ap0", Policy: "allow", MACs: []string{"02:00:00:00:00:09"}}},
+		},
+		"filter off": {
+			strings.Replace(base, "macacl.status=enabled", "macacl.status=disabled", 1),
+			cur,
+			[]ACL{{Section: "ap0"}},
+		},
+		"macfile section is left out": {
+			base + "macacl.1.acl.policy=deny\nmacacl.1.acl.1.status=enabled\nmacacl.1.acl.1.mac=02:00:00:00:00:09\n",
+			cur + "wireless.ap0.macfile='/etc/macs'\n",
+			nil,
+		},
+	} {
+		if got := Plan(ParseCfg(c.cfg), ParseUCI(c.cur), f).ACLs; !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: %+v, want %+v", name, got, c.want)
 		}
 	}
 }
