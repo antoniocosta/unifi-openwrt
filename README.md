@@ -341,8 +341,7 @@ Similar projects:
   OpenWrt AP that is not managed by the UniFi. It found and documented the
   frame formats this project's own relay is built on.
 - [@rbferreira's fork](https://github.com/rbferreira/unifi-openwrt/tree/airport):
-  An Apple AirPort base station reported to the UniFi, read-only. Not
-  supported here.
+  An Apple AirPort base station managed from the UniFi. Not supported here.
 
 Details and license texts are in [NOTICE](NOTICE).
 
