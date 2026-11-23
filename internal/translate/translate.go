@@ -104,6 +104,12 @@ type ACL struct {
 	MACs    []string // lower case; empty for ""
 }
 
+// AutoChannel is a channel chosen by the daemon for a radio on "auto".
+type AutoChannel struct {
+	Channel int    `json:"channel"`
+	HTMode  string `json:"htmode"` // the UCI htmode the channel was chosen for
+}
+
 // handled lists system_cfg top-level sections the translator reads.
 var handled = map[string]bool{"qos": true, "bandsteering": true, "radio": true, "aaa": true, "wireless": true, "system": true, "locale": true, "ntpclient": true, "macacl": true, "users": true, "netconf": true, "dhcpc": true, "route": true, "resolv": true, "syslog": true, "ledbar": true, "snmp": true, "stamgr": true, "vlan": true, "bridge": true}
 
@@ -127,6 +133,10 @@ type Features struct {
 	// name for the current country; the controller's medium/low modes are
 	// relative to the max. Unknown radios keep the maximum (and a note).
 	TxPower map[string][2]int
+	// AutoChannel: per UCI wifi-device, the channel the daemon chose after
+	// hostapd's automatic selection failed on that radio (openwrt/acs.go).
+	// Used while the controller asks for "auto" with the same htmode.
+	AutoChannel map[string]AutoChannel
 	// FTRelay: the daemon can relay 802.11r key-exchange frames between
 	// hostapd and UniFi APs on this AP (internal/ftrelay). Only then a WLAN
 	// with fast roaming gets the controller's mobility domain and key;
@@ -193,6 +203,16 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 			want["channels"] = auto24
 		} else if cur[k+"channels"] == auto24 && want["channel"] != "" {
 			r.Ops = append(r.Ops, Op{Del: true, Key: k + "channels", Old: auto24})
+		}
+		if a, has := f.AutoChannel[sec]; has && a.Channel > 0 && want["channel"] == "auto" {
+			ht := want["htmode"]
+			if ht == "" {
+				ht = cur[k+"htmode"]
+			}
+			if ht == a.HTMode {
+				want["channel"] = strconv.Itoa(a.Channel)
+				r.Notes = append(r.Notes, fmt.Sprintf("radio %s: automatic channel asked for, but hostapd's channel selection failed on this radio: channel %d, chosen by the daemon", sec, a.Channel))
+			}
 		}
 		if cc, raw := countryCode(cfg[p+"countrycode"], cfg["radio.countrycode"]); cc != "" {
 			want["country"] = cc

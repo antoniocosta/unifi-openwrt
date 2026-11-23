@@ -249,3 +249,16 @@ func (sc *scanner) siblingFT() map[string]openwrt.PeerFT {
 	}
 	return out
 }
+
+// bssPerChannel counts the networks of the last scans by their channel.
+func (sc *scanner) bssPerChannel() map[int]int {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+	out := map[int]int{}
+	for _, r := range sc.results {
+		for _, b := range r.BSS {
+			out[b.Channel]++
+		}
+	}
+	return out
+}

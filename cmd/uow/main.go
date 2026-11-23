@@ -335,6 +335,9 @@ func main() {
 		startFT(ap, *ftVerbose)
 		defer closeFT()
 	}
+	if ap != nil && *apply {
+		loadACS(filepath.Join(*stateDir, "auto_channel.json"))
+	}
 	if ap != nil {
 		if _, err := os.Stat(filepath.Join(*stateDir, "system_cfg.txt")); err == nil {
 			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
@@ -357,6 +360,7 @@ func main() {
 	var lastBan time.Time
 	var clockGuard openwrt.ClockGuard
 	var clockChecked time.Time
+	acsChecked := time.Now()
 	lastFT := time.Now()
 	for {
 		cfgBefore := x.S.CfgVersion
@@ -373,6 +377,12 @@ func main() {
 		if ap != nil && *apply && ok && !next.ServerTime.IsZero() && time.Since(clockChecked) >= time.Minute {
 			clockChecked = time.Now()
 			checkClock(ap, &clockGuard, next.ServerTime)
+		}
+		if ap != nil && *apply && time.Since(acsChecked) >= time.Minute {
+			acsChecked = time.Now()
+			if checkACS(ap) {
+				syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
+			}
 		}
 		if ok && !ledStarted {
 			ledStarted = true
@@ -846,6 +856,7 @@ func plan(ap *openwrt.Client, cfgPath string) (translate.Result, error) {
 	f := ap.Features()
 	f.FTRelay = ftRelay != nil
 	f.NoFTPSK, f.NoFTSAE = ftLimits()
+	f.AutoChannel = acsPicks
 	f.APAddr = apHost
 	return translate.Plan(translate.ParseCfg(string(cfg)), translate.ParseUCI(string(out)), f), nil
 }
