@@ -223,6 +223,26 @@ are not UCI (nftables, tc, usteer, snmpd, hostapd runtime lists).
 The translator only disables AP interfaces the controller no longer lists;
 it never deletes them.
 
+**Automatic channel that hostapd cannot choose.** `channel 'auto'` leaves
+the choice to hostapd (ACS). On `mwl8k` (Linksys E4200 v2) hostapd chose
+channel 48 for HT40 on 5 GHz every time, a channel without an upper
+neighbour on that radio, and gave up (`ACS: Could not (err: -3) select hw_mode for freq=5240 channel=48`).
+The WLANs of that radio stay off, and netifd still reports the radio as up,
+so the health check passes. With a wireless uplink on the radio the channel
+is the parent's and ACS never runs: It shows once the AP is on a cable.
+Once a minute the daemon looks for an enabled radio on `auto` whose
+interfaces are all AP interfaces without a channel. One that is still so a
+minute later gets a channel from the daemon: Among the channels the radio
+may use at once (not disabled, no radar detection, no "No IR" in
+`iw phy <phy> channels`) and that fit the configured width as a whole
+block, the block with the fewest networks in the last scans, the lowest of
+equals; on 2.4 GHz 1, 6 or 11. The plan then asks for that channel instead
+of `auto`, with a note, for as long as the controller asks for `auto` with
+the same width. The choice is kept in `auto_channel.json` in the state
+directory. Code: `internal/openwrt/acs.go`, `cmd/uow/acs.go`. Measured:
+5 GHz off for good with `auto` and HT40; with the daemon's choice, channel
+36 at 40 MHz 2 minutes after the radio failed to start.
+
 ### Feature probe
 
 `openwrt.Client.Features` checks the AP's hostapd for what it can do:
