@@ -28,16 +28,46 @@ func TestWLANRates(t *testing.T) {
 func TestRadioRates(t *testing.T) {
 	var r Result
 	rr := map[string][]wlanRate{"radio0": {
-		{"a", []string{"12000", "18000", "24000", "36000", "48000", "54000"}, []string{"12000"}},
-		{"b", []string{"24000", "36000", "48000", "54000"}, []string{"24000"}},
+		{"a", []string{"12000", "18000", "24000", "36000", "48000", "54000"}, []string{"12000"}, "5g"},
+		{"b", []string{"24000", "36000", "48000", "54000"}, []string{"24000"}, "5g"},
 	}}
 	ops := radioRateOps(rr, ParseUCI("wireless.radio0=wifi-device\n"), &r)
 	if len(ops) != 2 || ops[0].List[0] != "12000" || ops[1].List[0] != "12000" {
 		t.Fatalf("all raised -> lowest: %+v", ops)
 	}
-	rr["radio0"] = append(rr["radio0"], wlanRate{"c", nil, nil})
+	rr["radio0"] = append(rr["radio0"], wlanRate{"c", nil, nil, "5g"})
 	ops = radioRateOps(rr, ParseUCI("wireless.radio0.supported_rates='12000'\nwireless.radio0.basic_rate='12000'\n"), &r)
 	if len(ops) != 2 || !ops[0].Del || len(r.Notes) != 1 {
 		t.Fatalf("one default -> defaults: %+v %v", ops, r.Notes)
+	}
+}
+
+// A 2.4 GHz radio with a WLAN on UniFi's default rates gets the 802.11b
+// rates, which OpenWrt leaves out by default.
+func TestRadioRatesLegacy(t *testing.T) {
+	legacy := func(ops []Op) string {
+		for _, o := range ops {
+			if o.Key == "wireless.radio0.legacy_rates" {
+				return o.Value
+			}
+		}
+		return ""
+	}
+	var r Result
+	dflt := map[string][]wlanRate{"radio0": {{"a", nil, nil, "2g"}}}
+	if got := legacy(radioRateOps(dflt, ParseUCI("wireless.radio0=wifi-device\n"), &r)); got != "1" {
+		t.Errorf("2.4 GHz on the defaults: legacy_rates op %q, want 1", got)
+	}
+	if got := legacy(radioRateOps(dflt, ParseUCI("wireless.radio0.legacy_rates='1'\n"), &r)); got != "" {
+		t.Errorf("already set: legacy_rates op %q", got)
+	}
+	five := map[string][]wlanRate{"radio0": {{"a", nil, nil, "5g"}}}
+	if got := legacy(radioRateOps(five, ParseUCI("wireless.radio0=wifi-device\n"), &r)); got != "" {
+		t.Errorf("5 GHz: legacy_rates op %q", got)
+	}
+	// every WLAN raised its minimum (no 802.11b rates asked for): the lists rule
+	raised := map[string][]wlanRate{"radio0": {{"a", []string{"6000", "9000"}, []string{"6000"}, "2g"}}}
+	if got := legacy(radioRateOps(raised, ParseUCI("wireless.radio0=wifi-device\n"), &r)); got != "" {
+		t.Errorf("minimum raised: legacy_rates op %q", got)
 	}
 }
