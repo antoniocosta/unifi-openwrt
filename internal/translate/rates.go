@@ -62,6 +62,7 @@ func wlanRates(cfg Cfg, w, band string) (supported, basic []string) {
 type wlanRate struct {
 	ssid       string
 	sup, basic []string
+	band       string // 2g, 5g, 6g
 }
 
 // radioRateOps sets a radio's supported_rates/basic_rate from its WLANs'
@@ -69,6 +70,15 @@ type wlanRate struct {
 // the lowest of them applies, so no WLAN gets stricter than it asked);
 // otherwise the radio keeps the defaults. Per-WLAN rates need per-BSS beacon
 // rates (nl80211 BEACON_RATE_LEGACY), which e.g. ath10k lacks.
+//
+// The defaults are UniFi's, and on 2.4 GHz those have the 802.11b rates
+// (1 Mbit/s beacons and management frames: wireless.N.beacon_rate=1000,
+// minrate_cck_rates.status=true). OpenWrt's own default leaves them out
+// (legacy_rates 0: 6 Mbit/s and up), so a 2.4 GHz radio with a WLAN on the
+// defaults gets legacy_rates 1. Without them no client could join the
+// 2.4 GHz WLANs of a Linksys E4200 v2 (mwl8k): a Raspberry Pi 3B+ got as far
+// as "authenticated" three times in three tries, and joined at once with
+// them, on the same channel.
 func radioRateOps(rr map[string][]wlanRate, cur UCI, r *Result) []Op {
 	var ops []Op
 	var radios []string
@@ -97,6 +107,9 @@ func radioRateOps(rr map[string][]wlanRate, cur UCI, r *Result) []Op {
 			r.Notes = append(r.Notes, fmt.Sprintf("%s: minimum data rate of %v not applied: rates are per radio here and %v use the defaults", sec, raised, dflt))
 		}
 		k := "wireless." + sec + "."
+		if len(dflt) > 0 && ws[0].band == "2g" && cur[k+"legacy_rates"] != "1" {
+			ops = append(ops, Op{Key: k + "legacy_rates", Value: "1", Old: cur[k+"legacy_rates"]})
+		}
 		for _, x := range []struct {
 			opt  string
 			want []string

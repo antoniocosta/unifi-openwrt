@@ -320,7 +320,7 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 		// options are not passed to hostapd); collect per radio
 		if cfg[w+"status"] != "disabled" && cfg[a+"status"] != "disabled" {
 			sup, basic := wlanRates(cfg, w, band)
-			radioRates[sec] = append(radioRates[sec], wlanRate{ssid, sup, basic})
+			radioRates[sec] = append(radioRates[sec], wlanRate{ssid, sup, basic, band})
 		}
 		for _, o := range []string{"supported_rates", "basic_rate"} {
 			if old, has := cur[k+o]; has {
