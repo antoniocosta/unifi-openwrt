@@ -356,9 +356,11 @@ comes up.
 
 ### Ports: `if_table`, `port_table`
 
-Ports are the interfaces with a `device` link in sysfs, other than `eth*`
-(the CPU port behind DSA), bridges and radios; virtual ones (`miireg` on the
-Linksys MX4300, tunnels, VLAN devices) have none and are left out.
+Ports are the interfaces with a `device` link in sysfs, other than bridges,
+radios and a switch's CPU port (a DSA conduit, which has a `dsa` directory in
+sysfs). Virtual ones (`miireg` on the Linksys MX4300, tunnels, VLAN devices)
+have no `device` link and are left out. An `eth0` that is a jack of its own,
+as on an AP without a switch, is a port.
 
 `if_table[0]` (`eth0`, with `num_port`) and `port_table` (port 1 = the
 uplink port, then the others: `media`, `speed`, `full_duplex`, `up`,
