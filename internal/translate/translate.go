@@ -186,6 +186,14 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 		if ht := htmode(mode, cur[k+"htmode"]); ht != "" {
 			want["htmode"] = ht
 		}
+		// Automatic channel on 2.4 GHz: 1, 6 or 11, as a UniFi AP chooses. hostapd
+		// left alone also takes 12 and 13 where the country allows them.
+		const auto24 = "1 6 11"
+		if band == "2g" && want["channel"] == "auto" {
+			want["channels"] = auto24
+		} else if cur[k+"channels"] == auto24 && want["channel"] != "" {
+			r.Ops = append(r.Ops, Op{Del: true, Key: k + "channels", Old: auto24})
+		}
 		if cc, raw := countryCode(cfg[p+"countrycode"], cfg["radio.countrycode"]); cc != "" {
 			want["country"] = cc
 		} else if raw != "" {
