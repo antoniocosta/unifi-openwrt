@@ -132,6 +132,7 @@ for i in $(ubus call iwinfo devices | jsonfilter -e '@.devices[*]'); do
   echo "=== stats $i"; for f in rx_bytes tx_bytes rx_packets tx_packets rx_errors tx_errors rx_dropped tx_dropped; do printf '%s=%s\n' $f $(cat /sys/class/net/$i/statistics/$f); done
 done
 echo "=== wstatus"; ubus call network.wireless status 2>/dev/null
+echo "=== devphy"; for d in $(uci show wireless 2>/dev/null | sed -n "s/^wireless\.\([A-Za-z0-9_]*\)=wifi-device$/\1/p"); do echo "$d $(ubus call iwinfo info "{\"device\":\"$d\"}" 2>/dev/null | jsonfilter -e "@.phy" 2>/dev/null)"; done
 for e in $(ls /sys/class/net); do
   [ -e /sys/class/net/$e/phy80211 ] && continue
   case $e in lo|br-*) continue;; esac
@@ -365,6 +366,7 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 	// it one radio, and the controller's WLANs on the other bands were
 	// dropped as "radio not on this AP".
 	devs := parseWirelessStatus(secs.get("wstatus"))
+	devs = ifacesByPhy(devs, parseDevPhy(secs.get("devphy")), s.Radios)
 	var radios []Radio
 	idx := map[string]int{}
 	for _, r := range s.Radios {
@@ -460,6 +462,56 @@ func parseWirelessStatus(b []byte) []wifiDevice {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Section < out[j].Section })
 	return out
+}
+
+// parseDevPhy reads the "section phy" lines of the collection: the wiphy
+// behind each wifi-device, as iwinfo resolves it.
+func parseDevPhy(b []byte) map[string]string {
+	out := map[string]string{}
+	for _, line := range strings.Split(string(b), "\n") {
+		if f := strings.Fields(line); len(f) == 2 {
+			out[f[0]] = f[1]
+		}
+	}
+	return out
+}
+
+// ifacesByPhy gives each interface the wireless status does not name to the
+// wifi-device of its wiphy, when exactly one wifi-device is on that wiphy.
+// While netifd sets a radio up (after a Wi-Fi reload, at boot) the status
+// lists the radio's interfaces without their names for some seconds, and the
+// interfaces already exist. Without this such an interface was a radio of
+// its own, with frequency 0 taken for 2.4 GHz: the radios we report changed
+// names for that moment, and a plan made then put the controller's 5 GHz
+// settings on the 2.4 GHz device and switched the 5 GHz WLANs off. Seen on a
+// Linksys E4200 v2 that boots on a cable with a wireless uplink still in its
+// config (the watcher removes the uplink and reloads the Wi-Fi as the daemon
+// starts).
+func ifacesByPhy(devs []wifiDevice, devPhy map[string]string, ifaces []Radio) []wifiDevice {
+	count := map[string]int{}
+	for _, d := range devs {
+		if p := devPhy[d.Section]; p != "" {
+			count[p]++
+		}
+	}
+	for _, r := range ifaces {
+		if r.Phy == "" || count[r.Phy] != 1 {
+			continue
+		}
+		named := false
+		for _, d := range devs {
+			named = named || slices.Contains(d.Ifaces, r.Iface)
+		}
+		if named {
+			continue
+		}
+		for i := range devs {
+			if devPhy[devs[i].Section] == r.Phy {
+				devs[i].Ifaces = append(devs[i].Ifaces, r.Iface)
+			}
+		}
+	}
+	return devs
 }
 
 // offDevices lists the wifi-devices the wireless status marks disabled.

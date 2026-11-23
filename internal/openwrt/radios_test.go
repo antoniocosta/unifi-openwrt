@@ -200,3 +200,48 @@ func TestSortVAPs(t *testing.T) {
 		t.Errorf("order: %s", got)
 	}
 }
+
+// While a radio is being set up the wireless status lists its interfaces
+// without their names. An interface that exists already (here the 5 GHz AP
+// and a leaving uplink, as sampled on a Linksys E4200 v2 a few seconds after
+// boot) belongs to the wifi-device of its wiphy, not to a radio of its own.
+func TestRadiosUnnamedInterfaces(t *testing.T) {
+	out := `=== board
+{"hostname":"ap","model":"m","release":{"description":"OpenWrt"}}
+=== iface phy1-sta0 phy1
+{"bssid":"02:00:00:00:00:05","mode":"Client"}
+=== assoc phy1-sta0
+{"results":[]}
+=== iface phy1-ap0 phy1
+{"ssid":"x","bssid":"02:00:00:00:00:05","mode":"Master","channel":36,"frequency":5180}
+=== assoc phy1-ap0
+{"results":[]}
+=== wstatus
+{"radio0":{"up":false,"pending":true,"disabled":false,"config":{"band":"2g","channel":"auto","htmode":"HT20"},"interfaces":[{"section":"a","ifname":"phy0-ap0"},{"section":"b","ifname":"phy0-ap1"}]},
+ "radio1":{"up":false,"pending":true,"disabled":false,"config":{"band":"5g","channel":"36","htmode":"HT40"},"interfaces":[{"section":"c"}]}}
+=== devphy
+radio0 phy0
+radio1 phy1
+`
+	s, err := Parse([]byte(out), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.RadioNames(), map[string]string{"wifi0": "2g", "wifi1": "5g"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("radios = %v, want %v", got, want)
+	}
+	if got, want := s.RadioSections(), map[string]string{"wifi0": "radio0", "wifi1": "radio1"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("sections = %v, want %v", got, want)
+	}
+
+	// two wifi-devices on one wiphy: the wiphy does not say which, so the
+	// interface stays on its own (as before)
+	multi := strings.Replace(out, "radio0 phy0", "radio0 phy1", 1)
+	s, err = Parse([]byte(multi), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Radios) != 3 {
+		t.Errorf("two wifi-devices on phy1: %d radios, want 3", len(s.Radios))
+	}
+}
