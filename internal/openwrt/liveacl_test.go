@@ -125,7 +125,7 @@ macacl.1.status=enabled
 macacl.1.devname=wifi0ap0
 macacl.1.acl.status=enabled
 `
-	cur := "wireless.radio0=wifi-device\nwireless.radio0.band='2g'\nwireless.ap0=wifi-iface\nwireless.ap0.device='radio0'\nwireless.ap0.mode='ap'\nwireless.ap0.ssid='t'\n" +
+	cur := "wireless.radio0=wifi-device\nwireless.radio0.band='2g'\nwireless.radio0.legacy_rates='1'\nwireless.ap0=wifi-iface\nwireless.ap0.device='radio0'\nwireless.ap0.mode='ap'\nwireless.ap0.ssid='t'\n" +
 		// the rest of the WLAN config, so that only MAC filter ops remain
 		"wireless.ap0.encryption='none'\nwireless.ap0.network='lan'\nwireless.ap0.uapsd='0'\n"
 	f := translate.Features{Phys: map[string]string{"wifi0": "2g"}}
