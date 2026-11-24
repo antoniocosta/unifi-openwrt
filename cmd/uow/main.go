@@ -52,6 +52,9 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "wire-probe" {
+		os.Exit(wireProbe(os.Args[2:]))
+	}
 	informURL := flag.String("url", "http://192.168.1.1:8080/inform", "controller inform URL (IP literal host)")
 	console := flag.String("console", "192.168.1.1", "console host for read-only health checks")
 	macStr := flag.String("mac", "02:6f:77:72:74:01", "device MAC: made-up (02:...) without -ap; with -ap it must equal the AP's br-lan MAC")
@@ -62,7 +65,7 @@ func main() {
 	hostname := flag.String("hostname", "OpenWrt", "hostname reported to the controller")
 	wifiCaps := flag.Int("wifi-caps", 0, "UNIFI_WIFI_CAP bitmap to claim (131072 = WPA3); only what the AP can do")
 	uplinkName := flag.String("uplink-port", "", "port that is always the uplink (e.g. wan); empty = the port the gateway is behind")
-	flag.BoolVar(&meshUplink, "mesh-uplink", false, "join the site's mesh as a wireless uplink when no cable has link (AP-side watcher)")
+	flag.BoolVar(&meshUplink, "mesh-uplink", false, "join the site's mesh as a wireless uplink when no cable is the uplink (AP-side watcher)")
 	flag.IntVar(&hwCaps, "hw-caps", 0, "hw_caps to claim (2 = LED colour, 16384 = LED brightness); 0 = the model's")
 	flag.StringVar(&portalListen, "portal-listen", "", "guest portal redirect endpoint (UniFi APs: :8882); empty = off")
 	flag.StringVar(&ledIdle, "led-idle", "", "idle LED effect instead of steady blue: \"rainbow\" (RGB LED rings, daemon on the AP); empty = blue like the UniFi model")
@@ -163,6 +166,9 @@ func main() {
 		}
 		if *apAddr == "local" {
 			apHost = snap.IP // keeps the static-IP guard on (planNetwork)
+			if exe, err := os.Executable(); err == nil {
+				meshHelper = exe
+			}
 		}
 	}
 	if err := os.MkdirAll(*stateDir, 0o700); err != nil {
@@ -373,6 +379,10 @@ func main() {
 		if ap != nil && *apply && ok && !next.ServerTime.IsZero() && time.Since(clockChecked) >= time.Minute {
 			clockChecked = time.Now()
 			checkClock(ap, &clockGuard, next.ServerTime)
+		}
+		if ap != nil && *apply && !replanAt.IsZero() && time.Now().After(replanAt) {
+			replanAt = time.Time{}
+			syncAP(ap, filepath.Join(*stateDir, "system_cfg.txt"), *apply, api, base, x.S.InformURL, x.S.Blocked)
 		}
 		if ok && !ledStarted {
 			ledStarted = true
@@ -818,6 +828,7 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 	}
 	if r2, err := plan(ap, cfgPath); err == nil {
 		log.Printf("after apply: %d change(s) left", len(r2.Ops))
+		replanAfter(len(r2.Ops))
 	}
 }
 
@@ -832,6 +843,28 @@ func appliedMsg(id, how string) string {
 		return fmt.Sprintf("apply %s: committed, live MAC list update not possible (%s): Wi-Fi reloaded; %s", id, why, check)
 	}
 	return fmt.Sprintf("apply %s: committed, reloading; %s", id, check)
+}
+
+// Changes left right after a confirmed apply mean the plan was made from a
+// reading of the AP that did not hold (its radios were starting) or that an
+// option does not stick. The first is repaired by planning again a little
+// later; for the second, at most two tries in a row.
+var (
+	replanAt    time.Time
+	replanTries int
+)
+
+func replanAfter(left int) {
+	if left == 0 {
+		replanAt, replanTries = time.Time{}, 0
+		return
+	}
+	if replanTries >= 2 {
+		return
+	}
+	replanTries++
+	replanAt = time.Now().Add(30 * time.Second)
+	log.Printf("after apply: planning again in 30 s (try %d of 2)", replanTries)
 }
 
 func plan(ap *openwrt.Client, cfgPath string) (translate.Result, error) {
@@ -1175,6 +1208,10 @@ func shapeReconcile(ap *openwrt.Client, s *openwrt.Snapshot) {
 // meshUplink: -mesh-uplink.
 var meshUplink bool
 
+// meshHelper: this binary's path when the daemon runs on the AP (-ap local),
+// for the watcher's "uow wire-probe"; empty otherwise.
+var meshHelper string
+
 // syncMesh gives the AP-side watcher the site's mesh SSID/PSK (system_cfg
 // mesh.essid + the vwire VAP's aaa.N.wpa.psk) and the 5 GHz radio.
 func syncMesh(ap *openwrt.Client, cfgPath string, apply bool) {
@@ -1206,7 +1243,7 @@ func syncMesh(ap *openwrt.Client, cfgPath string, apply bool) {
 	on := meshUplink && cfg["mesh.status"] == "enabled" && ssid != "" && psk != "" && radio != ""
 	// Mesh Parent in the UniFi (device mesh_uplink_1/2 -> mesh.serial1/2)
 	accept := openwrt.MeshAccept(cfg["mesh.serial1"], cfg["mesh.serial2"])
-	if err := ap.SyncMesh(on, ssid, psk, radio, accept); err != nil {
+	if err := ap.SyncMesh(on, ssid, psk, radio, accept, meshHelper); err != nil {
 		log.Printf("MESH FAILED: %v", err)
 		return
 	}
@@ -1215,7 +1252,7 @@ func syncMesh(ap *openwrt.Client, cfgPath string, apply bool) {
 		if len(accept) > 0 {
 			parent = "parent " + strings.TrimSpace(cfg["mesh.serial1"]+" "+cfg["mesh.serial2"])
 		}
-		log.Printf("MESH: wireless uplink armed on %s, %s (joins only when no cable has link)", radio, parent)
+		log.Printf("MESH: wireless uplink armed on %s, %s (joins only when no cable is the uplink)", radio, parent)
 	}
 }
 

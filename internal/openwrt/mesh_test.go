@@ -19,9 +19,20 @@ func TestMeshScript(t *testing.T) {
 	if strings.Index(d, `ip link set "$i" down`) > strings.Index(d, "uci -q delete") {
 		t.Fatal("drop must take the link down before cleaning up")
 	}
-	// a cable must reset the wait for an uplink that does not associate
-	if !strings.Contains(meshScript, "if wired; then\n\t\tlost=0 down=0 wait=60") {
-		t.Fatal("the wired branch must reset down and wait")
+	// a cable that is the uplink must reset the wait for an uplink that does
+	// not associate
+	if !strings.Contains(meshScript, "if [ $ok = 1 ]; then\n\t\t\t\tlost=0 down=0 wait=60") ||
+		!strings.Contains(meshScript, "if reach; then\n\t\t\t\tdead=0 wait=60") {
+		t.Fatal("a cable that reaches the gateway must reset down and wait")
+	}
+	// link alone never removes the uplink: every drop for a cable follows a test
+	for _, l := range strings.Split(meshScript, "\n") {
+		if strings.Contains(l, `drop "wired uplink back"`) && !strings.Contains(l, "wire 3 || probe 2") && strings.TrimSpace(l) != `drop "wired uplink back"` {
+			t.Fatalf("drop without a gateway test: %q", l)
+		}
+	}
+	if strings.Contains(meshScript, "`") {
+		t.Fatal("a backquote would end the Go string")
 	}
 	if meshSafe.MatchString("a'b") || meshSafe.MatchString("a\nb") {
 		t.Fatal("quote/newline accepted")

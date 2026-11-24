@@ -223,6 +223,11 @@ are not UCI (nftables, tc, usteer, snmpd, hostapd runtime lists).
 The translator only disables AP interfaces the controller no longer lists;
 it never deletes them.
 
+After a confirmed apply the daemon plans once more and logs how many changes
+are left. More than none means the plan was made from a reading of the AP
+that did not hold (its radios were starting): It plans again 30 s later, at
+most twice in a row.
+
 ### Feature probe
 
 `openwrt.Client.Features` checks the AP's hostapd for what it can do:
@@ -288,6 +293,18 @@ interface, `iw survey dump`, antenna masks, `/sys/class/net/*/statistics`,
 One reading takes about 0.2 s on a dual-core ARM AP. Interfaces are
 discovered each time (phy numbers can change after a reboot); the daemon's
 own scan interface `uowscan*` is skipped.
+
+While netifd sets a radio up, `network.wireless status` lists the radio's
+interfaces without their names for some seconds, and the interfaces can
+exist already. Such an interface belongs to the wifi-device of its wiphy
+(`ubus call iwinfo info` on the wifi-device names the wiphy), when one
+wifi-device is on that wiphy. Before this it was a radio of its own, with
+no frequency and so taken for 2.4 GHz, and the names the daemon reports
+(`wifi0`, `wifi1`) moved for that moment. A plan made then put the
+controller's 5 GHz settings on the 2.4 GHz device and switched the 5 GHz
+WLANs off. Seen on a Linksys E4200 v2 at every boot on a cable with the
+wireless uplink still in its config: The watcher removes the uplink and
+reloads the Wi-Fi as the daemon starts.
 
 ### Radios: `radio_table`
 
@@ -656,7 +673,8 @@ LED rings. Empty (the default) behaves like the UniFi model.
 ## Mesh (wireless uplink)
 
 An AP adopted with UCI `mesh_uplink '1'` joins the site's UniFi mesh as a
-wireless uplink when it has no cable, like a UniFi AP that loses its wire.
+wireless uplink when no cable leads to the gateway, like a UniFi AP that
+loses its wire.
 Tested: An OpenWrt AP meshing to a UniFi console's AP, shown as "Meshing to"
 the parent in the UniFi. Code: `internal/openwrt/mesh.go`,
 `internal/openwrt/unifi.go` (`uplinkVAP`).
@@ -675,22 +693,55 @@ The daemon writes `/etc/unifi-openwrt/mesh.conf` (mode 600: SSID,
 passphrase, 5 GHz radio, accepted parents) and `mesh.sh`; procd runs
 `mesh.sh` as its own instance, so it keeps working if the daemon stops.
 
-- Every second: Wired = any non-Wi-Fi `br-lan` member with carrier.
-- Wired: Drop the wireless uplink (link down first, then delete
-  `wireless.unifi_mesh`, `wifi reload`).
-- 20 s without a cable: Add `wireless.unifi_mesh` (mode `sta`, `wds 1`,
-  `psk2+ccmp`, network `lan`) and `wifi reload`.
+- A cable is the uplink when the gateway answers through it. Link alone
+  does not say so: a client plugged into the AP has link, and so has a
+  cable to a switch that lost its own uplink. An AP without a default
+  gateway cannot ask; for it a cable with link is the uplink.
+- On a cable (no wireless uplink): The gateway is pinged every 5 s. No
+  answer for 30 s: Add the wireless uplink, as below.
+- No cable has link for 20 s: Add `wireless.unifi_mesh` (mode `sta`,
+  `wds 1`, `psk2+ccmp`, network `lan`) and `wifi reload`.
+- Meshing, and a cable has link: `uow wire-probe` (the daemon's binary,
+  `cmd/uow/wireprobe_linux.go`) sends an ARP probe for the gateway out of
+  the wired ports only and waits a second for the answer, on any
+  interface. It runs when the cable gets link (3 tries) and every 10 s
+  after that. An answer: Drop the wireless uplink (link down first, then
+  delete `wireless.unifi_mesh`, `wifi reload`). The wireless uplink is not
+  touched by the test.
+- No answer when the cable gets link, and every 5 minutes: The same
+  question asked the older way, for a gateway that does not answer an ARP
+  probe and for a daemon that does not run on the AP. The uplink leaves
+  the bridge for up to 2 s, the gateway is pinged, and without an answer
+  the uplink goes back into the bridge.
 - The uplink is configured but not associated (`iw dev <ifname> link`) for
-  60 s: Drop it, so the AP starts alone and the step above adds the uplink
+  60 s: Drop it, so the AP starts alone and a later step adds the uplink
   back to a running radio. Seen on `mwl8k` after a reboot with the uplink
   saved in the config: The radio's first set-up has the AP waiting for the
   uplink, and the uplink's scans return nothing. Each failed try doubles
   the wait, up to 10 minutes, so an AP with no parent in range does not
-  restart its radio every 80 s; an uplink that associates, a cable or
-  meshing switched off start it at 60 s again.
+  restart its radio every 80 s; an uplink that associates, a cable that is
+  the uplink or meshing switched off start it at 60 s again.
 
-**The AP is never uplinked by cable and Wi-Fi at once** (that would loop the
-network), except for at most about a second after a cable comes back.
+**The AP is not uplinked by cable and Wi-Fi at once for long** (that would
+loop the network): at most a few seconds after a cable gets link, and at
+most 10 s after a cable that had link starts to reach the gateway.
+
+Measured on a Linksys E4200 v2 (`mwl8k`) behind a UniFi switch, with the
+switch port switched off and on, and moved to an empty VLAN and back:
+
+| Event | What happened |
+|---|---|
+| Port off | Uplink added after 20 s; the AP answered again 29 s after it stopped |
+| Port on | Uplink removed 4 s after the link came up; 2 s without an answer |
+| Port in an empty VLAN (link, no gateway) | Uplink added after 30 s without the gateway; the AP answered again 46 s after it stopped. Before this rule it stayed off the network for as long as the port was in that VLAN |
+| Port back in the LAN | Uplink removed 40 s later, of which about 30 s are the switch's spanning tree before the port forwards |
+| Boot on a cable with the uplink still in the config | Uplink removed as the watcher starts; the plan had 0 changes |
+
+Why not the bridge's forwarding table: with both in the bridge every
+broadcast of the gateway arrives twice, and the entry keeps the port of the
+later copy, the wireless one. A watcher that waited for the gateway's MAC
+on a wired port noticed a cable that had come alive after 21 s in one run
+and 131 s in another.
 
 A UniFi parent accepts a 4-address client that is not Ubiquiti firmware.
 On a single-channel driver (ath10k) the AP's own 5 GHz service moves to the
