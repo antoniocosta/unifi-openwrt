@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -233,41 +234,134 @@ wifi`, id))
 	return err
 }
 
-// WifiHealthy checks that every enabled radio with interfaces is up. A
-// radio with no (enabled) interfaces is fine: a disabled device (Disable in
-// the UniFi) gets no WLANs at all (docs/internals.md).
+// wifiProbe prints netifd's view of the radios, hostapd's state of every BSS
+// ("hostapd.<ifname> <state>") and the kernel's interfaces.
+const wifiProbe = `ubus call network.wireless status || exit 1
+echo "=== hostapd"
+for o in $(ubus list "hostapd.*" 2>/dev/null); do
+  echo "$o $(ubus call "$o" get_status 2>/dev/null | jsonfilter -e "@.status" 2>/dev/null)"
+done
+echo "=== iw"
+iw dev 2>/dev/null
+true`
+
+// WifiHealthy checks that every enabled radio with interfaces is up and that
+// each of its AP interfaces is on the air. A radio with no (enabled)
+// interfaces is fine: a disabled device (Disable in the UniFi) gets no WLANs
+// at all (docs/internals.md).
 func (cl *Client) WifiHealthy() (bool, string) {
-	out, err := cl.Run("ubus call network.wireless status")
+	ok, _, why := cl.WifiHealth()
+	return ok, why
+}
+
+// WifiHealth is WifiHealthy plus starting: nothing is broken, but a BSS is
+// still on its way up (hostapd is choosing a channel or scanning for
+// neighbours), so the caller may look again.
+func (cl *Client) WifiHealth() (ok, starting bool, why string) {
+	out, err := cl.Run(wifiProbe)
 	if err != nil {
-		return false, err.Error()
+		return false, false, err.Error()
 	}
-	return wifiStatusOK(out)
+	return wifiHealth(out)
 }
 
 func wifiStatusOK(js []byte) (bool, string) {
-	// Parse {"radio0":{"up":true,"disabled":false,"interfaces":[...]},...}
+	ok, _, why := wifiHealth(js)
+	return ok, why
+}
+
+// wifiHealth reads wifiProbe's output. netifd reports a radio as up as soon
+// as its setup script has run, also when hostapd then failed to start the
+// BSSes (seen with a failed automatic channel selection: WLANs off, radio
+// "up"). So every AP interface is checked too:
+//   - hostapd says ENABLED, or DFS (the radar check before the first beacon,
+//     up to 10 minutes on some channels): fine.
+//   - hostapd says ACS, HT_SCAN or COUNTRY_UPDATE, or netifd has no name for
+//     the interface yet: starting.
+//   - hostapd says anything else (DISABLED, UNINITIALIZED): not on the air.
+//   - hostapd has no answer for it (no ubus object under that name): the
+//     kernel's interface must be an AP on a channel.
+//
+// Output without the hostapd and iw parts (only the status JSON) checks the
+// radios alone.
+func wifiHealth(out []byte) (ok, starting bool, why string) {
+	js, rest, probed := strings.Cut(string(out), "\n=== hostapd\n")
+	hp, iw, _ := strings.Cut(rest, "=== iw\n")
 	type radio struct {
-		Up         bool  `json:"up"`
-		Disabled   bool  `json:"disabled"`
-		Interfaces []any `json:"interfaces"`
+		Up         bool `json:"up"`
+		Disabled   bool `json:"disabled"`
+		Interfaces []struct {
+			Ifname string `json:"ifname"`
+			Config struct {
+				Mode string `json:"mode"`
+			} `json:"config"`
+		} `json:"interfaces"`
 	}
 	var m map[string]radio
-	if err := json.Unmarshal(js, &m); err != nil {
-		return false, "wireless status: " + err.Error()
+	if err := json.Unmarshal([]byte(js), &m); err != nil {
+		return false, false, "wireless status: " + err.Error()
 	}
-	var bad []string
+	state := map[string]string{} // ifname -> hostapd state
+	for _, l := range strings.Split(hp, "\n") {
+		if name, st, found := strings.Cut(strings.TrimPrefix(l, "hostapd."), " "); found && strings.HasPrefix(l, "hostapd.") && st != "" {
+			state[name] = st
+		}
+	}
+	onAir := map[string]bool{} // kernel interfaces of type AP with a channel
+	var cur string
+	var isAP bool
+	for _, l := range strings.Split(iw, "\n") {
+		f := strings.Fields(l)
+		switch {
+		case len(f) == 2 && f[0] == "Interface":
+			cur, isAP = f[1], false
+		case len(f) == 2 && f[0] == "type":
+			isAP = f[1] == "AP"
+		case len(f) > 1 && f[0] == "channel" && isAP:
+			onAir[cur] = true
+		}
+	}
+	var down, off, wait []string
 	for name, r := range m {
-		if r.Disabled {
+		if r.Disabled || len(r.Interfaces) == 0 {
 			continue
 		}
-		if len(r.Interfaces) > 0 && !r.Up {
-			bad = append(bad, name)
+		if !r.Up {
+			down = append(down, name)
+			continue
+		}
+		if !probed {
+			continue
+		}
+		for _, i := range r.Interfaces {
+			if i.Config.Mode != "ap" {
+				continue
+			}
+			switch st := state[i.Ifname]; {
+			case i.Ifname == "":
+				wait = append(wait, name+" (an interface without a name yet)")
+			case st == "ENABLED" || st == "DFS":
+			case st == "ACS" || st == "HT_SCAN" || st == "COUNTRY_UPDATE":
+				wait = append(wait, i.Ifname+" ("+st+")")
+			case st != "":
+				off = append(off, i.Ifname+" ("+st+")")
+			case !onAir[i.Ifname]:
+				off = append(off, i.Ifname+" (no channel)")
+			}
 		}
 	}
-	if len(bad) > 0 {
-		return false, fmt.Sprintf("radios not up: %v", bad)
+	sort.Strings(down)
+	sort.Strings(off)
+	sort.Strings(wait)
+	switch {
+	case len(down) > 0:
+		return false, false, fmt.Sprintf("radios not up: %v", down)
+	case len(off) > 0:
+		return false, false, fmt.Sprintf("WLANs not on the air: %v", off)
+	case len(wait) > 0:
+		return false, true, fmt.Sprintf("WLANs still starting: %v", wait)
 	}
-	return true, fmt.Sprintf("%d radios ok", len(m))
+	return true, false, fmt.Sprintf("%d radios ok", len(m))
 }
 
 func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }

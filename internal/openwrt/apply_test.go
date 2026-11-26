@@ -181,3 +181,38 @@ func TestLiveApplyScript(t *testing.T) {
 		}
 	}
 }
+
+// wifiProbe output: the radio is "up" for netifd in every case, what differs
+// is hostapd's state of the BSSes.
+func TestWifiHealthBSS(t *testing.T) {
+	status := `{"radio0":{"up":true,"disabled":false,"interfaces":[{"ifname":"phy0-ap0","config":{"mode":"ap"}},{"ifname":"phy0-sta0","config":{"mode":"sta"}}]},` +
+		`"radio1":{"up":true,"disabled":false,"interfaces":[{"ifname":"phy1-ap0","config":{"mode":"ap"}}]}}`
+	iw := "phy#1\n\tInterface phy1-ap0\n\t\ttype AP\n\t\tchannel 36 (5180 MHz), width: 80 MHz, center1: 5210 MHz\n" +
+		"phy#0\n\tInterface phy0-sta0\n\t\ttype managed\n\tInterface phy0-ap0\n\t\ttype AP\n\t\tchannel 6 (2437 MHz), width: 20 MHz, center1: 2437 MHz\n"
+	noChan := "phy#1\n\tInterface phy1-ap0\n\t\ttype AP\n\t\ttxpower 20.00 dBm\nphy#0\n\tInterface phy0-ap0\n\t\ttype AP\n\t\tchannel 6 (2437 MHz), width: 20 MHz, center1: 2437 MHz\n"
+	probe := func(status, hostapd, iw string) []byte {
+		return []byte(status + "\n=== hostapd\n" + hostapd + "=== iw\n" + iw)
+	}
+	for _, c := range []struct {
+		name         string
+		out          []byte
+		ok, starting bool
+		why          string
+	}{
+		{"all on the air", probe(status, "hostapd.phy0-ap0 ENABLED\nhostapd.phy1-ap0 ENABLED\n", iw), true, false, "2 radios ok"},
+		{"radar check", probe(status, "hostapd.phy0-ap0 ENABLED\nhostapd.phy1-ap0 DFS\n", noChan), true, false, "2 radios ok"},
+		{"channel selection running", probe(status, "hostapd.phy0-ap0 ENABLED\nhostapd.phy1-ap0 ACS\n", noChan), false, true, "phy1-ap0 (ACS)"},
+		{"channel selection failed", probe(status, "hostapd.phy0-ap0 ENABLED\nhostapd.phy1-ap0 DISABLED\n", noChan), false, false, "phy1-ap0 (DISABLED)"},
+		{"hostapd gone, no channel", probe(status, "hostapd.phy0-ap0 ENABLED\n", noChan), false, false, "phy1-ap0 (no channel)"},
+		{"no hostapd objects, on a channel", probe(status, "", iw), true, false, "2 radios ok"},
+		{"no state from hostapd, on a channel", probe(status, "hostapd.phy0-ap0 \nhostapd.phy1-ap0 \n", iw), true, false, "2 radios ok"},
+		{"name not known yet", probe(strings.Replace(status, `"ifname":"phy1-ap0",`, "", 1), "hostapd.phy0-ap0 ENABLED\n", iw), false, true, "radio1"},
+		{"broken wins over starting", probe(status, "hostapd.phy0-ap0 ACS\nhostapd.phy1-ap0 DISABLED\n", noChan), false, false, "phy1-ap0 (DISABLED)"},
+		{"radio down", probe(strings.Replace(status, `"radio1":{"up":true`, `"radio1":{"up":false`, 1), "hostapd.phy0-ap0 ENABLED\n", iw), false, false, "radios not up: [radio1]"},
+	} {
+		ok, starting, why := wifiHealth(c.out)
+		if ok != c.ok || starting != c.starting || !strings.Contains(why, c.why) {
+			t.Errorf("%s: ok=%v starting=%v why=%q, want ok=%v starting=%v why with %q", c.name, ok, starting, why, c.ok, c.starting, c.why)
+		}
+	}
+}

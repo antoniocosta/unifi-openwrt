@@ -776,10 +776,12 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 		wait = 2 * time.Second // no reload to wait for
 	}
 	time.Sleep(wait)
-	ok, why := ap.WifiHealthy()
-	for try := 0; !ok && try < 3; try++ { // a network reload drops the SSH session; give it time
+	// A network reload drops the SSH session: three more looks. A WLAN that
+	// is still starting (hostapd choosing a channel) gets up to a minute more.
+	ok, starting, why := ap.WifiHealth()
+	for try := 0; !ok && (try < 3 || starting && try < 9); try++ {
 		time.Sleep(10 * time.Second)
-		ok, why = ap.WifiHealthy()
+		ok, starting, why = ap.WifiHealth()
 	}
 	if ok && ap.IsLocal() {
 		// The radios say nothing about the wired side: a change to the
@@ -809,12 +811,21 @@ func syncAP(ap *openwrt.Client, cfgPath string, apply bool, api *unifiapi.Client
 		}
 	}
 	if !ok {
+		// A radio on "auto" whose channel selection failed: the daemon takes
+		// a channel for it now, before the rollback removes the evidence, and
+		// the same config is tried once more with that channel.
+		again := !acsRetry && pickACS(ap, 0)
 		log.Printf("apply %s: NOT healthy (%s): rolling back now", id, why)
 		if err := ap.RollbackNow(id); err != nil {
 			log.Printf("rollback %s: %v (the timed rollback will still fire)", id, err)
 		}
 		time.Sleep(10 * time.Second) // the rollback's wifi restarts BSSes
 		syncACLs(ap, r, blocked)
+		if again {
+			acsRetry = true
+			defer func() { acsRetry = false }()
+			defer syncAP(ap, cfgPath, apply, api, base, informURL, blocked)
+		}
 		return
 	}
 	if err := ap.Confirm(id); err != nil {

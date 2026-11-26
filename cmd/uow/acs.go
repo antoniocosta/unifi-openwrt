@@ -34,10 +34,18 @@ func loadACS(path string) {
 	}
 }
 
+// acsRetry: an apply is being tried again with a channel from the daemon
+// (syncAP), so a second failure is not tried a third time.
+var acsRetry bool
+
 // checkACS looks for radios whose automatic channel selection has failed and
 // chooses a channel for those that stayed that way since an earlier look. It
 // returns true when it chose one, so the caller plans again.
-func checkACS(ap *openwrt.Client) bool {
+func checkACS(ap *openwrt.Client) bool { return pickACS(ap, acsWait) }
+
+// pickACS is checkACS with the time a radio must have been without a channel;
+// 0 = choose at once (after an apply whose health check has already waited).
+func pickACS(ap *openwrt.Client, wait time.Duration) bool {
 	fails, err := ap.ACSFailures()
 	if err != nil {
 		return false
@@ -48,10 +56,12 @@ func checkACS(ap *openwrt.Client) bool {
 		failing[f.Section] = true
 		first, seen := acsSince[f.Section]
 		if !seen {
-			acsSince[f.Section] = now
-			continue
+			acsSince[f.Section], first = now, now
+			if wait > 0 {
+				continue
+			}
 		}
-		if now.Sub(first) < acsWait {
+		if now.Sub(first) < wait {
 			continue
 		}
 		ch := openwrt.PickChannel(f, scans.bssPerChannel())
