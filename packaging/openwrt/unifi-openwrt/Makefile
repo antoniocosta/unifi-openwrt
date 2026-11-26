@@ -109,7 +109,7 @@ for f in /lib/apk/packages/wpad-basic*.list /lib/apk/packages/hostapd-basic*.lis
 	[ -f "$$f" ] || continue
 	b=$${f##*/}; b=$${b%.list}
 	echo "unifi-openwrt: $$b is a basic hostapd; a full one is recommended (802.11k/v, WPA-Enterprise, deny list):"
-	echo "unifi-openwrt:   apk del $$b && apk add $$(echo $$b | sed 's/-basic//')   (Wi-Fi restarts; do it over a cable)"
+	echo "unifi-openwrt:   apk del $$b && apk add $$(echo $$b | sed 's/-basic//') && /etc/init.d/wpad enable && /etc/init.d/wpad start   (Wi-Fi restarts; do it over a cable)"
 done
 [ "$$(uci -q get unifi-openwrt.main.enabled)" = 1 ] || {
 	echo "unifi-openwrt: installed, disabled. Suggested UniFi models for this AP:"

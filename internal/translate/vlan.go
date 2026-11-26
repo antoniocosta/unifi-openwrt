@@ -57,15 +57,17 @@ func vlanNetworks(cfg Cfg) (map[string]string, []string) {
 }
 
 // planVLAN creates or removes the per-VLAN bridge and interface.
-func planVLAN(cfg Cfg, cur UCI, r *Result) []Op {
+func planVLAN(cfg Cfg, cur UCI, uplinkPort string, r *Result) []Op {
 	_, ids := vlanNetworks(cfg)
-	// the cable port: the first port of br-lan
-	port := ""
-	for k, v := range cur {
-		if strings.HasPrefix(k, "network.") && strings.HasSuffix(k, ".name") && v == "br-lan" {
-			f := strings.Fields(strings.ReplaceAll(cur[strings.TrimSuffix(k, ".name")+".ports"], "'", ""))
-			if len(f) > 0 {
-				port = f[0]
+	// the cable port: explicit -uplink-port when set, else the first port of br-lan
+	port := uplinkPort
+	if port == "" {
+		for k, v := range cur {
+			if strings.HasPrefix(k, "network.") && strings.HasSuffix(k, ".name") && v == "br-lan" {
+				f := strings.Fields(strings.ReplaceAll(cur[strings.TrimSuffix(k, ".name")+".ports"], "'", ""))
+				if len(f) > 0 {
+					port = f[0]
+				}
 			}
 		}
 	}
