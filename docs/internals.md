@@ -208,7 +208,15 @@ are not UCI (nftables, tc, usteer, snmpd, hostapd runtime lists).
    daemon backs up the touched packages and starts an on-AP timer that
    restores them after 5 minutes unless confirmed.
 4. **Health check.** 20 s later: Every enabled radio that has interfaces must
-   be up with its interfaces (`ubus call network.wireless status`), and a
+   be up (`ubus call network.wireless status`) and each of its AP interfaces
+   must be on the air. netifd reports a radio as up once its setup has run,
+   also when hostapd then failed to start the WLANs, so hostapd is asked for
+   the state of every BSS (`ubus call hostapd.<ifname> get_status`):
+   `ENABLED` and `DFS` (the radar check before the first beacon, up to 10
+   minutes on some channels) pass. `ACS`, `HT_SCAN`, `COUNTRY_UPDATE` and an
+   interface netifd has no name for yet are "still starting" and get up to a
+   minute more. Any other state fails. An interface hostapd has no answer for
+   must be an AP on a channel in `iw dev`. A
    daemon on the AP must still get a TCP connection to the controller's
    inform port (the radios say nothing about the wired side: A controller
    that sets a static AP to DHCP on a network without a DHCP server leaves
@@ -227,8 +235,10 @@ it never deletes them.
 the choice to hostapd (ACS). On `mwl8k` (Linksys E4200 v2) hostapd chose
 channel 48 for HT40 on 5 GHz every time, a channel without an upper
 neighbour on that radio, and gave up (`ACS: Could not (err: -3) select hw_mode for freq=5240 channel=48`).
-The WLANs of that radio stay off, and netifd still reports the radio as up,
-so the health check passes. With a wireless uplink on the radio the channel
+The WLANs of that radio stay off, and netifd still reports the radio as up.
+The health check looks at each BSS and fails. Before it rolls the change
+back, the daemon takes a channel for that radio as described below and tries
+the same config once more with it. With a wireless uplink on the radio the channel
 is the parent's and ACS never runs: It shows once the AP is on a cable.
 Once a minute the daemon looks for an enabled radio on `auto` whose
 interfaces are all AP interfaces without a channel. One that is still so a
