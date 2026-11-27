@@ -33,7 +33,7 @@ So this repo does two things:
   [docs/internals.md](docs/internals.md), so it can be checked, ported to other devices, or carried
   on by anyone.
 
-> **Tested on six devices only**, listed under
+> **Tested on seven devices only**, listed under
 > [Tested devices](#tested-devices). Other OpenWrt devices, other UniFi
 > models and other controller versions are **best effort**: They will very
 > likely work, they just have not been tried yet. Reports are welcome.
@@ -111,6 +111,7 @@ has the row to copy and what each cell needs.
 | [TP-Link Archer BE800](https://forum.openwrt.org/t/openwrt-for-tp-link-be800/227055) | Qualcomm IPQ9574 (`ath12k`), Wi-Fi 7, one phy for 2.4, 5 and 6 GHz | Snapshot | U7 Pro (`U7PRO`) | Not reported | By [@Kelon5212001](https://github.com/Kelon5212001): Adoption, all three radios, WLANs applied. Tested on 0.2.0 plus the fixes; confirmation on the merged code is pending. The mesh uplink joins but does not pass traffic (driver limit) |
 | [D-Link DIR-878 A1](https://openwrt.org/toh/d-link/dir-878_a1) | MediaTek MT7621, Wi-Fi 5 | 25.12.6 | UAP-AC-Pro (`U7PG2`) | Network 10.6.109 | By [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner): SSH adoption after the inform address changed, and "Override inform host" set to a name; the neighbour list next to two UAP-AC-Pros and a U7 Lite |
 | [Google Wifi (Gale / Breeze GJ2CQ)](https://openwrt.org/toh/google/wifi) | Qualcomm IPQ4019 (`ath10k`), Wi-Fi 5 | 25.12.6 | UAP-AC-Pro (`U7PG2`) | Not reported, on a UCG-Fiber | By [@girthub](https://github.com/girthub): Package install, adoption, automatic rollback, 2.4/5 GHz WLANs across tagged VLANs (20/30), LLDP uplink, 802.11k neighbour lists, client roaming with a U7 Pro |
+| [Cisco Meraki MR52](https://openwrt.org/toh/meraki/mr52) | Qualcomm IPQ8068, QCA9984 (`ath10k`), Wi-Fi 5 | 25.12.6 | UAP-AC-HD (`U7HD`) | Not reported | By [@Firefishy](https://github.com/Firefishy): Wired. Adoption, and both Ethernet ports reported with link speed. The controller still showed "Poor Ethernet Link Speed" (open) |
 
 ## What works
 
