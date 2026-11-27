@@ -306,14 +306,22 @@ Contributors:
   fixes.
 - [@rbferreira](https://github.com/rbferreira): The rollback timer without
   `setsid`, adoption from the inform address, the mesh parent lookup and a
-  mesh uplink that recovers after a reboot, tested on a Linksys E4200 v2.
+  mesh uplink that recovers after a reboot, radios the wireless status names
+  late, the 802.11b rates and channels 1, 6 and 11 on 2.4 GHz, and a channel
+  from the daemon when hostapd's own selection fails, tested on a Linksys
+  E4200 v2.
 - [@Kelon5212001](https://github.com/Kelon5212001): Radios that share one
   phy (`ath12k`) and the mesh watcher's cable check, tested on a TP-Link
   Archer BE800.
-- [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner):
-  Adoption over SSH from a controller whose inform address changed, and
-  informing to a host name the AP cannot resolve, tested on a D-Link
-  DIR-878.
+- [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner): Adoption
+  over SSH from a controller whose inform address changed, informing to a
+  host name the AP cannot resolve, genuine UniFi APs recognised as
+  neighbours, Roaming Assistant, and MAC list changes without a Wi-Fi
+  restart, tested on a D-Link DIR-878.
+- [@girthub](https://github.com/girthub): The uplink port for VLAN bridges
+  and the apk-tools version of the package build, tested on a Google Wifi.
+- [@Firefishy](https://github.com/Firefishy): Reported and tested the port
+  detection on a Cisco Meraki MR52.
 
 Similar projects:
 
