@@ -111,7 +111,7 @@ type AutoChannel struct {
 }
 
 // handled lists system_cfg top-level sections the translator reads.
-var handled = map[string]bool{"qos": true, "bandsteering": true, "radio": true, "aaa": true, "wireless": true, "system": true, "locale": true, "ntpclient": true, "macacl": true, "users": true, "netconf": true, "dhcpc": true, "route": true, "resolv": true, "syslog": true, "ledbar": true, "snmp": true, "stamgr": true, "vlan": true, "bridge": true}
+var handled = map[string]bool{"qos": true, "bandsteering": true, "radio": true, "aaa": true, "wireless": true, "system": true, "locale": true, "ntpclient": true, "macacl": true, "users": true, "netconf": true, "dhcpc": true, "route": true, "resolv": true, "syslog": true, "ledbar": true, "snmp": true, "stamgr": true, "vlan": true, "bridge": true, "switch": true}
 
 // Handled reports whether a system_cfg section (the part of a key before
 // the first dot) is translated.
@@ -119,9 +119,10 @@ func Handled(section string) bool { return handled[section] }
 
 // Features is what the AP's software supports (see openwrt.Client.Features).
 type Features struct {
-	APAddr     string // address the daemon reaches the AP on (static IPs must keep it)
-	UplinkPort string // explicit uplink port (-uplink-port) for tagged VLAN bridges; empty = first br-lan port
-	K, V, R    bool
+	APAddr      string         // address the daemon reaches the AP on (static IPs must keep it)
+	UplinkPort  string         // explicit or detected uplink port for tagged VLAN bridges; empty = first br-lan port
+	SwitchPorts map[int]string // UniFi port_idx -> OpenWrt netdev name for downlink Ethernet ports (switch section)
+	K, V, R     bool
 	// Phys: the radio names we report to the controller and their band
 	// ("wifi0" -> "2g"). When set, system_cfg radios with other names are
 	// ignored (the controller can remember radios that do not exist).
@@ -435,7 +436,7 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 
 	r.Ops = append(r.Ops, planSystem(cfg, cur, &r)...)
 	r.Ops = append(r.Ops, planNetwork(cfg, cur, f.APAddr, &r)...)
-	r.Ops = append(r.Ops, planVLAN(cfg, cur, f.UplinkPort, &r)...)
+	r.Ops = append(r.Ops, planVLAN(cfg, cur, f.UplinkPort, f.SwitchPorts, &r)...)
 
 	seen := map[string]bool{}
 	for k := range cfg {

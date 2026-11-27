@@ -162,6 +162,9 @@ func main() {
 		if len(snap.Radios) == 0 && len(snap.OffRadios) == 0 {
 			log.Printf("no Wi-Fi radio found: the UniFi will show this AP without radios (is a Wi-Fi driver installed, and rpcd-mod-iwinfo?)")
 		}
+		snap.UplinkName, snap.RearUplink = *uplinkName, model.RearUplinkPort()
+		detectedUplink = snap.UplinkPortName()
+		switchPorts = snap.DownlinkPorts()
 		if *apAddr == "local" {
 			apHost = snap.IP // keeps the static-IP guard on (planNetwork)
 		}
@@ -251,6 +254,8 @@ func main() {
 				lastErr = ""
 			}
 			s.UplinkName, s.RearUplink = *uplinkName, model.RearUplinkPort()
+			detectedUplink = s.UplinkPortName()
+			switchPorts = s.DownlinkPorts()
 			cfg, _ := os.ReadFile(filepath.Join(*stateDir, "system_cfg.txt"))
 			info := openwrt.InfoFromCfg(string(cfg))
 			info.Authorized = map[string]bool{}
@@ -871,6 +876,10 @@ func plan(ap *openwrt.Client, cfgPath string) (translate.Result, error) {
 	f.AutoChannel = acsPicks
 	f.APAddr = apHost
 	f.UplinkPort = uplinkPort
+	if f.UplinkPort == "" {
+		f.UplinkPort = detectedUplink
+	}
+	f.SwitchPorts = switchPorts
 	return translate.Plan(translate.ParseCfg(string(cfg)), translate.ParseUCI(string(out)), f), nil
 }
 
@@ -961,6 +970,12 @@ var apHost string
 
 // uplinkPort: -uplink-port, also used by planVLAN for tagged VLAN bridges.
 var uplinkPort string
+
+// detectedUplink: uplink port resolved from the AP snapshot when -uplink-port is empty.
+var detectedUplink string
+
+// switchPorts: UniFi port_idx -> OpenWrt netdev name for downlink Ethernet ports.
+var switchPorts map[int]string
 
 // locateBeepOn: -locate-beep.
 var locateBeepOn bool
