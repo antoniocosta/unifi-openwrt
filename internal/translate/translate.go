@@ -119,7 +119,8 @@ func Handled(section string) bool { return handled[section] }
 
 // Features is what the AP's software supports (see openwrt.Client.Features).
 type Features struct {
-	APAddr  string // address the daemon reaches the AP on (static IPs must keep it)
+	APAddr     string // address the daemon reaches the AP on (static IPs must keep it)
+	UplinkPort string // explicit uplink port (-uplink-port) for tagged VLAN bridges; empty = first br-lan port
 	K, V, R bool
 	// Phys: the radio names we report to the controller and their band
 	// ("wifi0" -> "2g"). When set, system_cfg radios with other names are
@@ -434,7 +435,7 @@ func Plan(cfg Cfg, cur UCI, f Features) Result {
 
 	r.Ops = append(r.Ops, planSystem(cfg, cur, &r)...)
 	r.Ops = append(r.Ops, planNetwork(cfg, cur, f.APAddr, &r)...)
-	r.Ops = append(r.Ops, planVLAN(cfg, cur, &r)...)
+	r.Ops = append(r.Ops, planVLAN(cfg, cur, f.UplinkPort, &r)...)
 
 	seen := map[string]bool{}
 	for k := range cfg {

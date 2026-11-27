@@ -19,7 +19,7 @@ func TestVLAN(t *testing.T) {
 		"network.lan": "interface", "network.uow12": "interface", "network.uowvlan12": "device", "network.uowvlan12.name": "br-uow12"}
 	var r Result
 	got := map[string]string{}
-	for _, o := range planVLAN(cfg, cur, &r) {
+	for _, o := range planVLAN(cfg, cur, "", &r) {
 		switch {
 		case o.Del:
 			got[o.Key] = "<del>"
@@ -49,7 +49,25 @@ func TestVLAN(t *testing.T) {
 	cur2 := UCI{"network.d": "device", "network.d.name": "br-lan", "network.d.ports": "lan1",
 		"network.uowvlan77": "device", "network.uowvlan77.name": "br-uow77", "network.uowvlan77.type": "bridge",
 		"network.uowvlan77.ports": "lan1.77", "network.uow77": "interface", "network.uow77.device": "br-uow77", "network.uow77.proto": "none"}
-	if ops := planVLAN(cfg, cur2, &r); len(ops) != 0 {
+	if ops := planVLAN(cfg, cur2, "", &r); len(ops) != 0 {
 		t.Errorf("idempotent: %v", ops)
+	}
+}
+
+func TestVLANUplinkPort(t *testing.T) {
+	cfg := Cfg{
+		"wireless.6.devname": "wifi0ap5", "wireless.6.ssid": "test",
+		"bridge.2.devname": "br0.77", "bridge.2.port.1.devname": "wifi0ap5", "bridge.2.port.3.devname": "eth0.77",
+	}
+	cur := UCI{"network.d": "device", "network.d.name": "br-lan", "network.d.ports": "lan wan"}
+	var r Result
+	got := ""
+	for _, o := range planVLAN(cfg, cur, "wan", &r) {
+		if o.Key == "network.uowvlan77.ports" && len(o.List) == 1 {
+			got = o.List[0]
+		}
+	}
+	if got != "wan.77" {
+		t.Fatalf("vlan port = %q, want %q", got, "wan.77")
 	}
 }

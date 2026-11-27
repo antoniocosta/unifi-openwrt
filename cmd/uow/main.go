@@ -85,6 +85,7 @@ func main() {
 	if h, _, err := net.SplitHostPort(*apAddr); err == nil {
 		apHost = h
 	}
+	uplinkPort = *uplinkName
 	log.SetFlags(log.Ldate | log.Ltime)
 	if *listModels {
 		for _, m := range models.All() {
@@ -869,6 +870,7 @@ func plan(ap *openwrt.Client, cfgPath string) (translate.Result, error) {
 	f.NoFTPSK, f.NoFTSAE = ftLimits()
 	f.AutoChannel = acsPicks
 	f.APAddr = apHost
+	f.UplinkPort = uplinkPort
 	return translate.Plan(translate.ParseCfg(string(cfg)), translate.ParseUCI(string(out)), f), nil
 }
 
@@ -956,6 +958,9 @@ func waitForAP(ap *openwrt.Client, x *device.Session) {
 
 // apHost: the AP address (from -ap), which a static IP must keep.
 var apHost string
+
+// uplinkPort: -uplink-port, also used by planVLAN for tagged VLAN bridges.
+var uplinkPort string
 
 // locateBeepOn: -locate-beep.
 var locateBeepOn bool

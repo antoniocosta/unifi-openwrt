@@ -111,6 +111,7 @@ console, and what you tested, and it gets a row here.
 | [Linksys E4200 v2](https://openwrt.org/toh/hwdata/linksys/linksys_e4200_v2) | Marvell Kirkwood, 2x 88W8366 (`mwl8k`), Wi-Fi 4 | 23.05.6 | UAP Pro (`U7P`) | Network 11.1.50 on a UCG Ultra | By [@rbferreira](https://github.com/rbferreira): Package install, SSH adoption with the controller on another address, the rollback timer, mesh uplink to a UniFi AP (a U7 Lite) |
 | [TP-Link Archer BE800](https://forum.openwrt.org/t/openwrt-for-tp-link-be800/227055) | Qualcomm IPQ9574 (`ath12k`), Wi-Fi 7, one phy for 2.4, 5 and 6 GHz | Snapshot | U7 Pro (`U7PRO`) | Not reported | By [@Kelon5212001](https://github.com/Kelon5212001): Adoption, all three radios, WLANs applied. Tested on 0.2.0 plus the fixes; confirmation on the merged code is pending. The mesh uplink joins but does not pass traffic (driver limit) |
 | [D-Link DIR-878 A1](https://openwrt.org/toh/d-link/dir-878_a1) | MediaTek MT7621, Wi-Fi 5 | 25.12.6 | UAP-AC-Pro (`U7PG2`) | Network 10.6.109 | By [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner): SSH adoption after the inform address changed, and "Override inform host" set to a name; the neighbour list next to two UAP-AC-Pros and a U7 Lite |
+| [Google Wifi (Gale / Breeze GJ2CQ)](https://openwrt.org/toh/google/wifi) | Qualcomm IPQ4019 (`ath10k`), Wi-Fi 5 | 25.12.6 | UAP-AC-Pro (`U7PG2`) | UCG-Fiber | Package install, adoption, automatic rollback, 2.4/5 GHz WLANs across tagged VLANs (20/30), LLDP uplink, 802.11k neighbour lists, client roaming with a U7 Pro |
 
 ## What works
 

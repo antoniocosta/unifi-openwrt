@@ -22,7 +22,7 @@ cd "$(dirname "$0")/.."
 top=$(pwd)
 mk=packaging/openwrt/unifi-openwrt/Makefile
 pkg=unifi-openwrt
-APK_STATIC_VER=3.0.9-r0
+APK_STATIC_VER=${APK_STATIC_VER:-3.0.11-r0}
 APK_STATIC_DIR=$HOME/.local/opt/apk-tools/bin
 
 die() { echo "mkapk: $*" >&2; exit 1; }
