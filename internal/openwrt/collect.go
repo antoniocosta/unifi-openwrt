@@ -145,7 +145,7 @@ for e in $(ls /sys/class/net); do
 done
 echo "=== fdb"; hexdump -v -e '6/1 "%02x" 1/1 " %u" 1/1 " %u" 1/4 " %u" 1/1 " %u" 3/1 "" "\n"' /sys/class/net/br-lan/brforward 2>/dev/null
 echo "=== lldp"; lldpctl -f json0 2>/dev/null || true
-echo "=== lan"; ip -4 addr show br-lan; cat /sys/class/net/br-lan/address
+echo "=== lan"; (ip -4 addr show br-lan.1 2>/dev/null; ip -4 addr show br-lan); cat /sys/class/net/br-lan/address
 `
 
 // Snapshot is one reading of the AP.
@@ -322,7 +322,7 @@ func Parse(out []byte, now time.Time) (*Snapshot, error) {
 	lan := string(secs.get("lan"))
 	for _, line := range strings.Split(lan, "\n") {
 		f := strings.Fields(line)
-		if len(f) >= 2 && f[0] == "inet" {
+		if s.IP == "" && len(f) >= 2 && f[0] == "inet" {
 			if ip, n, err := net.ParseCIDR(f[1]); err == nil {
 				s.IP = ip.String()
 				s.Netmask = net.IP(n.Mask).String()

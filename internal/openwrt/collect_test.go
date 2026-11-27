@@ -74,3 +74,23 @@ func TestGroupByPhy(t *testing.T) {
 		t.Fatalf("vap_table %d", n)
 	}
 }
+
+func TestParseLanBridgeVLAN(t *testing.T) {
+	// Under bridge-vlan, br-lan.1 is printed before br-lan; the first inet wins.
+	out := `=== board
+{"hostname":"ap","model":"m","release":{"description":"OpenWrt"}}
+=== lan
+12: br-lan.1@br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
+    inet 192.0.2.10/24 brd 192.0.2.255 scope global br-lan.1
+10: br-lan: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
+    inet 192.0.2.99/24 brd 192.0.2.255 scope global br-lan
+02:00:00:00:00:01
+`
+	s, err := Parse([]byte(out), time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.IP != "192.0.2.10" || s.Netmask != "255.255.255.0" || s.MAC != "02:00:00:00:00:01" {
+		t.Fatalf("got IP=%q Netmask=%q MAC=%q", s.IP, s.Netmask, s.MAC)
+	}
+}

@@ -139,3 +139,113 @@ func TestUplinkPortFallback(t *testing.T) {
 		t.Errorf("uplinkPort = %+v, want lan1", p)
 	}
 }
+
+func TestDownlinkPortsAndUplinkPortName(t *testing.T) {
+	// Default uplink layout: uplink is port 1, downlinks start at 2.
+	s := &Snapshot{
+		MAC: "02:00:00:00:00:01", Gateway: "192.0.2.1",
+		ARP: map[string]string{"02:00:00:00:00:fe": "192.0.2.1"},
+		Ports: []Port{
+			{Name: "lan1", MAC: "02:00:00:00:00:01", Up: true, BridgePort: 1},
+			{Name: "lan2", MAC: "02:00:00:00:00:01", BridgePort: 2},
+			{Name: "wan", MAC: "02:00:00:00:00:04", Up: true, BridgePort: 4},
+		},
+		FDB: []FDBEntry{{MAC: "02:00:00:00:00:fe", Port: 4, Age: 1}},
+	}
+	if got := s.UplinkPortName(); got != "wan" {
+		t.Errorf("UplinkPortName = %q, want %q", got, "wan")
+	}
+	if got, want := s.DownlinkPorts(), map[int]string{2: "lan1", 3: "lan2"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("default DownlinkPorts = %v, want %v", got, want)
+	}
+
+	// In-wall rear uplink at port 5: front ports start at 1.
+	iw := &Snapshot{
+		RearUplink: 5, UplinkName: "wan",
+		Ports: []Port{
+			{Name: "lan1", MAC: "02:00:00:00:00:01", Up: true, BridgePort: 1},
+			{Name: "lan2", MAC: "02:00:00:00:00:01", BridgePort: 2},
+			{Name: "wan", MAC: "02:00:00:00:00:04", Up: true, BridgePort: 4},
+			{Name: "teql0"}, // virtual device (no MAC) is excluded
+		},
+	}
+	if got := iw.UplinkPortName(); got != "wan" {
+		t.Errorf("in-wall UplinkPortName = %q, want %q", got, "wan")
+	}
+	if got, want := iw.DownlinkPorts(), map[int]string{1: "lan1", 2: "lan2"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("RearUplink=5 DownlinkPorts = %v, want %v", got, want)
+	}
+
+	// In-wall rear uplink at port 3 with 3 LAN ports: lan3 skips port 3 to 4.
+	iw.RearUplink = 3
+	iw.Ports = append(iw.Ports, Port{Name: "lan3", MAC: "02:00:00:00:00:01", BridgePort: 3})
+	if got, want := iw.DownlinkPorts(), map[int]string{1: "lan1", 2: "lan2", 4: "lan3"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("RearUplink=3 DownlinkPorts = %v, want %v", got, want)
+	}
+
+	// Single-port AP has no downlink ports.
+	single := &Snapshot{Ports: []Port{{Name: "eth0", MAC: "02:00:00:00:00:01", Up: true}}}
+	if got := single.UplinkPortName(); got != "eth0" {
+		t.Errorf("single-port UplinkPortName = %q, want %q", got, "eth0")
+	}
+	if got := single.DownlinkPorts(); got != nil {
+		t.Errorf("single-port DownlinkPorts = %v, want nil", got)
+	}
+
+	// When no uplink can be resolved, port 0 must not be silently dropped.
+	noUp := &Snapshot{
+		RearUplink: 5,
+		Ports: []Port{
+			{Name: "lan1", MAC: "02:00:00:00:00:01"},
+			{Name: "lan2", MAC: "02:00:00:00:00:02"},
+		},
+	}
+	if got := noUp.UplinkPortName(); got != "" {
+		t.Errorf("unresolved UplinkPortName = %q, want empty", got)
+	}
+	if got, want := noUp.DownlinkPorts(), map[int]string{1: "lan1", 2: "lan2"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("unresolved DownlinkPorts = %v, want %v", got, want)
+	}
+}
+
+func TestPortTableMACVLAN(t *testing.T) {
+	cfg := "switch.status=enabled\nswitch.vlan.status=enabled\n" +
+		"switch.port.1.pvid=40\nswitch.port.2.pvid=20\n" +
+		"switch.port.3.pvid=0\nswitch.port.4.pvid=4095\nswitch.port.5.pvid=+40\nswitch.port.06.pvid=30\n"
+	info := InfoFromCfg(cfg)
+	if got, want := info.PortVLAN, map[int]int{1: 40, 2: 20}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("PortVLAN = %v, want %v", got, want)
+	}
+	s := &Snapshot{
+		RearUplink: 3, UplinkName: "wan",
+		MAC: "02:00:00:00:00:01",
+		Ports: []Port{
+			{Name: "lan1", MAC: "02:00:00:00:00:01", Up: true, Speed: 1000, BridgePort: 1},
+			{Name: "lan2", MAC: "02:00:00:00:00:02", Up: true, Speed: 1000, BridgePort: 2},
+			{Name: "wan", MAC: "02:00:00:00:00:03", Up: true, Speed: 1000, BridgePort: 3},
+		},
+		FDB: []FDBEntry{
+			{MAC: "02:00:00:00:00:11", Port: 1, Age: 5},
+			{MAC: "02:00:00:00:00:22", Port: 2, Age: 7},
+		},
+	}
+	rows, _ := s.Fields(nil, info, nil)["port_table"].([]map[string]any)
+	want1 := []map[string]any{{"mac": "02:00:00:00:00:11", "age": int64(5), "vlan": 40, "static": false}}
+	want2 := []map[string]any{{"mac": "02:00:00:00:00:22", "age": int64(7), "vlan": 20, "static": false}}
+	if !reflect.DeepEqual(rows[0]["mac_table"], want1) {
+		t.Errorf("port 1 mac_table = %v, want %v", rows[0]["mac_table"], want1)
+	}
+	if !reflect.DeepEqual(rows[1]["mac_table"], want2) {
+		t.Errorf("port 2 mac_table = %v, want %v", rows[1]["mac_table"], want2)
+	}
+	// Disabled switch VLAN falls back to VLAN 1.
+	infoOff := InfoFromCfg("switch.status=disabled\nswitch.vlan.status=disabled\nswitch.port.1.pvid=40\n")
+	if len(infoOff.PortVLAN) != 0 {
+		t.Errorf("disabled PortVLAN = %v, want empty", infoOff.PortVLAN)
+	}
+	rowsOff, _ := s.Fields(nil, infoOff, nil)["port_table"].([]map[string]any)
+	wantOff := []map[string]any{{"mac": "02:00:00:00:00:11", "age": int64(5), "vlan": 1, "static": false}}
+	if !reflect.DeepEqual(rowsOff[0]["mac_table"], wantOff) {
+		t.Errorf("disabled port 1 mac_table = %v, want %v", rowsOff[0]["mac_table"], wantOff)
+	}
+}

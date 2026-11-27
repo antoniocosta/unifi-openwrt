@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/antoniocosta/unifi-openwrt/internal/models"
 	"github.com/antoniocosta/unifi-openwrt/internal/openwrt"
 	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 )
@@ -21,7 +22,13 @@ func main() {
 	key := flag.String("key", "ap_ed25519", "ssh private key for the AP")
 	kh := flag.String("known-hosts", "ap_known_hosts", "known_hosts file with the AP's host key")
 	cfgPath := flag.String("cfg", "system_cfg.txt", "system_cfg from the controller (saved by the daemon in its state directory)")
+	modelCode := flag.String("model", "U7PG2", "UniFi model code for port numbering")
+	uplinkName := flag.String("uplink-port", "", "explicit uplink port (e.g. wan); empty = auto-detect")
 	flag.Parse()
+	model, ok := models.Lookup(*modelCode)
+	if !ok {
+		log.Fatalf("unknown UniFi model %q", *modelCode)
+	}
 	cfg, err := os.ReadFile(*cfgPath)
 	if err != nil {
 		log.Fatal(err)
@@ -34,6 +41,14 @@ func main() {
 	}
 	f := cl.Features()
 	f.APAddr, _, _ = net.SplitHostPort(*addr)
+	f.UplinkPort = *uplinkName
+	if snap, err := cl.Collect(); err == nil {
+		snap.UplinkName, snap.RearUplink = *uplinkName, model.RearUplinkPort()
+		if f.UplinkPort == "" {
+			f.UplinkPort = snap.UplinkPortName()
+		}
+		f.SwitchPorts = snap.DownlinkPorts()
+	}
 	fmt.Printf("AP hostapd features: %+v\n", f)
 	r := translate.Plan(translate.ParseCfg(string(cfg)), translate.ParseUCI(string(out)), f)
 	fmt.Printf("%d change(s):\n", len(r.Ops))

@@ -8,6 +8,7 @@ import (
 	"github.com/antoniocosta/unifi-openwrt/internal/translate"
 	"net"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,6 +36,8 @@ type CfgInfo struct {
 	// MACs the portal let in (filled by the daemon).
 	GuestVAP   map[string]bool
 	Authorized map[string]bool
+	// PortVLAN: 1-based port_idx -> native VLAN (pvid) from switch.port.<idx>.pvid.
+	PortVLAN map[int]int
 }
 
 func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCaps) map[string]any {
@@ -89,19 +92,16 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 		rear := s.RearUplink > 0 && s.uplinkPort() != nil
 		var rows []map[string]any
 		for i, p := range phys {
-			idx, name := i+1, "Main"
+			idx := s.portIdx(i, rear)
+			name := "Main"
 			if i == 1 {
 				name = "Secondary"
 			} else if i > 1 {
 				name = fmt.Sprintf("Port %d", i+1)
 			}
 			if rear && i == 0 {
-				idx, name = s.RearUplink, "PoE In + Data"
+				name = "PoE In + Data"
 			} else if rear {
-				idx = i // front ports from 1; more ports than the model has go after the uplink
-				if i >= s.RearUplink {
-					idx = i + 1
-				}
 				name = fmt.Sprintf("Port %d", idx)
 			}
 			speed := p.Speed
@@ -122,7 +122,11 @@ func (s *Snapshot) Fields(prev *Snapshot, info CfgInfo, caps map[string]RadioCap
 			// in-wall APs) gets them listed as wired clients on that port
 			// (lTGxQKc, docs/internals.md).
 			if !uplink && p.BridgePort > 0 {
-				row["mac_table"] = s.portMACs(p.BridgePort)
+				vlan := info.PortVLAN[idx]
+				if vlan <= 0 {
+					vlan = 1
+				}
+				row["mac_table"] = s.portMACs(p.BridgePort, vlan)
 			}
 			rows = append(rows, row)
 		}
@@ -466,9 +470,10 @@ func (s *Snapshot) gatewayPort() *Port {
 }
 
 // portMACs: the mac_table rows of one br-lan port, one per MAC (the
-// youngest entry when a MAC shows up on more than one VLAN). The FDB carries
-// no VLAN, so every row is on VLAN 1, the untagged LAN.
-func (s *Snapshot) portMACs(port int) []map[string]any {
+// youngest entry when a MAC shows up on more than one VLAN). The brforward
+// file carries no VLAN, so each row carries the port's native VLAN (1 when
+// switch port VLANs are not configured).
+func (s *Snapshot) portMACs(port, vlan int) []map[string]any {
 	age := map[string]int64{}
 	var order []string
 	for _, e := range s.FDB {
@@ -484,7 +489,7 @@ func (s *Snapshot) portMACs(port int) []map[string]any {
 	}
 	rows := []map[string]any{}
 	for _, mac := range order {
-		rows = append(rows, map[string]any{"mac": mac, "age": age[mac], "vlan": 1, "static": false})
+		rows = append(rows, map[string]any{"mac": mac, "age": age[mac], "vlan": vlan, "static": false})
 	}
 	return rows
 }
@@ -538,8 +543,25 @@ func InfoFromCfg(systemCfg string) CfgInfo {
 			info.DevName[w["ssid"]+"|"+w["parent"]] = w["devname"]
 		}
 	}
-	for _, d := range translate.GuestPolicy(translate.ParseCfg(systemCfg)).Devnames {
+	cfg := translate.ParseCfg(systemCfg)
+	for _, d := range translate.GuestPolicy(cfg).Devnames {
 		info.GuestVAP[d] = true
+	}
+	if cfg["switch.status"] == "enabled" && cfg["switch.vlan.status"] == "enabled" {
+		info.PortVLAN = map[int]int{}
+		for k, v := range cfg {
+			if !strings.HasPrefix(k, "switch.port.") || !strings.HasSuffix(k, ".pvid") {
+				continue
+			}
+			mid := strings.TrimSuffix(strings.TrimPrefix(k, "switch.port."), ".pvid")
+			idx, err1 := strconv.Atoi(mid)
+			vid, err2 := strconv.Atoi(v)
+			if err1 == nil && err2 == nil &&
+				idx > 0 && strconv.Itoa(idx) == mid &&
+				vid >= 1 && vid <= 4094 && strconv.Itoa(vid) == v {
+				info.PortVLAN[idx] = vid
+			}
+		}
 	}
 	return info
 }
@@ -613,6 +635,51 @@ func (s *Snapshot) RadioTxPower() map[string][2]int {
 		}
 	}
 	return m
+}
+
+// portIdx maps an index in physPorts() to its UniFi port_idx.
+func (s *Snapshot) portIdx(i int, rear bool) int {
+	if rear {
+		if i == 0 {
+			return s.RearUplink
+		}
+		if i >= s.RearUplink {
+			return i + 1
+		}
+		return i
+	}
+	return i + 1
+}
+
+// UplinkPortName returns the OpenWrt netdev name of the resolved uplink port,
+// or "" when no uplink port is known.
+func (s *Snapshot) UplinkPortName() string {
+	if p := s.uplinkPort(); p != nil {
+		return p.Name
+	}
+	return ""
+}
+
+// DownlinkPorts maps UniFi port_idx -> OpenWrt netdev name for non-uplink
+// physical Ethernet ports, using the same numbering as port_table.
+func (s *Snapshot) DownlinkPorts() map[int]string {
+	phys := s.physPorts()
+	if len(phys) == 0 {
+		return nil
+	}
+	up := s.uplinkPort()
+	rear := s.RearUplink > 0 && up != nil
+	out := map[int]string{}
+	for i, p := range phys {
+		if i == 0 && up != nil {
+			continue // uplink port
+		}
+		out[s.portIdx(i, rear)] = p.Name
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // Describe summarises the AP for models.Suggest.

@@ -424,7 +424,15 @@ when the model has the `ACCESS_POINT_SWITCH` feature (`XCfthFC.isSwitch`):
 The in-wall models (U6-IW, U6-Enterprise-IW, AC-IW, ...) do, the AC Pro
 does not. For those it walks each non-uplink port (`lTGxQKc`) and lists the
 MACs as wired clients on that port; a network matches a row by `vlan`
-(default 1). The FDB carries no VLAN, so every row says 1, the untagged LAN.
+(default 1). The `brforward` FDB carries no VLAN, so each row carries the
+port's native VLAN from `switch.port.<idx>.pvid` when `switch.status=enabled`
+and `switch.vlan.status=enabled`, or `1` otherwise.
+
+On DSA switches, per-port `rx_bytes`/`tx_bytes` are read from
+`/sys/class/net/<port>/statistics/`, which only counts frames that cross the
+CPU port; traffic forwarded directly between switch ports in hardware
+(including `bridge-vlan` ports) is only counted in the switch's hardware MIB
+counters (`ethtool -S`).
 
 `lldp_table` holds the LLDP neighbours when the optional `lldpd` runs on the
 AP (`lldpctl -f json0`; the older keyed `-f json` form is read too): Per
@@ -797,13 +805,30 @@ port list.
 
 - `network.uowvlan<vid>`: A bridge device `br-uow<vid>` with port
   `<port>.<vid>` (an 802.1Q device on the cable port: `-uplink-port` when
-  set, else the first `br-lan` port). `br-lan`
-  is not changed: A VLAN device on a DSA port in a bridge without VLAN
-  filtering receives the tagged frames.
+  set, else the detected uplink port, else the first `br-lan` port). `br-lan`
+  is not changed for Wi-Fi-only VLANs: A VLAN device on a DSA port in a bridge
+  without VLAN filtering receives the tagged frames.
 - `network.uow<vid>`: Interface on that bridge, `proto none`: No address and
   no DHCP, DNS or RA from the AP.
 - The WLAN's wifi-ifaces get `network uow<vid>`.
-- `uow*` sections are deleted again when the VLAN goes away.
+- Disabled downlink ports (`switch.port.<p>.status=disabled` or
+  `switch.port.<p>.opmode=disabled`) are removed from `br-lan` even when
+  `switch.status` is not enabled, and restored when re-enabled with
+  `opmode=switch` unless referenced elsewhere in UCI.
+- When `switch.status=enabled` and `switch.vlan.status=enabled` (in-wall
+  models with Port VLAN enabled), `br-lan` switches to OpenWrt `bridge-vlan`
+  (`vlan_filtering=1`) and `network.lan` uses `br-lan.1` so DSA switches
+  (such as `qca8k`) keep all ports in one hardware bridge rather than
+  splitting ports across separate non-VLAN-filtering bridges. Per-VLAN
+  `network.uowbv<vid>` (`bridge-vlan`) sections configure `<uplink>:u*` on
+  VLAN 1, `<uplink>:t` on tagged VLANs, and `<ifname>:u*` / `<ifname>:t` on
+  downlink ports; Wi-Fi VLAN bridges (`br-uow<vid>`) attach to `br-lan.<vid>`
+  while wired-only VLANs are hardware-switched inside `br-lan`. The uplink
+  port is never removed from `br-lan` or VLAN 1.
+- `uow*` (`uow<vid>`, `uowvlan<vid>`, `uowbv<vid>`) sections are deleted
+  again when the VLAN goes away, and disabling `switch.vlan.status` reverts
+  `br-lan` (`vlan_filtering` removed, `network.lan` back on `br-lan`, Wi-Fi
+  bridges back on `<uplink>.<vid>`).
 
 ### Not built
 

@@ -154,7 +154,7 @@ func (cl *Client) SetGuest(ifnames []string, g translate.Guest) error {
 	}
 	// the LAN's DNS servers and gateway as the AP learnt them; the bridge
 	// MAC and address (for the DNS redirect)
-	out, err := cl.Run(`sed -n 's/^nameserver \([0-9.]*\)$/\1/p' /tmp/resolv.conf.d/resolv.conf.auto 2>/dev/null; ip -4 route show default | sed -n 's/^default via \([0-9.]*\).*/\1/p'; echo "mac $(cat /sys/class/net/br-lan/address)"; echo "ip $(ip -4 addr show br-lan | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)"`)
+	out, err := cl.Run(`sed -n 's/^nameserver \([0-9.]*\)$/\1/p' /tmp/resolv.conf.d/resolv.conf.auto 2>/dev/null; ip -4 route show default | sed -n 's/^default via \([0-9.]*\).*/\1/p'; echo "mac $(cat /sys/class/net/br-lan/address)"; echo "ip $({ ip -4 addr show br-lan.1 2>/dev/null; ip -4 addr show br-lan; } | sed -n 's/.*inet \([0-9.]*\).*/\1/p' | head -1)"`)
 	if err != nil {
 		return err
 	}
