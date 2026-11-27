@@ -796,7 +796,8 @@ port list.
 ### OpenWrt
 
 - `network.uowvlan<vid>`: A bridge device `br-uow<vid>` with port
-  `<first br-lan port>.<vid>` (an 802.1Q device on the cable port). `br-lan`
+  `<port>.<vid>` (an 802.1Q device on the cable port: `-uplink-port` when
+  set, else the first `br-lan` port). `br-lan`
   is not changed: A VLAN device on a DSA port in a bridge without VLAN
   filtering receives the tagged frames.
 - `network.uow<vid>`: Interface on that bridge, `proto none`: No address and

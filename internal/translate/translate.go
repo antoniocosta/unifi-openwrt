@@ -121,7 +121,7 @@ func Handled(section string) bool { return handled[section] }
 type Features struct {
 	APAddr     string // address the daemon reaches the AP on (static IPs must keep it)
 	UplinkPort string // explicit uplink port (-uplink-port) for tagged VLAN bridges; empty = first br-lan port
-	K, V, R bool
+	K, V, R    bool
 	// Phys: the radio names we report to the controller and their band
 	// ("wifi0" -> "2g"). When set, system_cfg radios with other names are
 	// ignored (the controller can remember radios that do not exist).
