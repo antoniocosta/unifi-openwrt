@@ -210,7 +210,9 @@ part of this repository.
 - **Full wpad** (`wpad-mbedtls`, `wpad-wolfssl` or `wpad-openssl`) instead of
   `wpad-basic-*`: Needed for 802.11k/v and the runtime deny
   list. Install it from the package feed; check with `--simulate` before
-  removing the basic one.
+  removing the basic one. Removing it stops the `wpad` service: Run
+  `/etc/init.d/wpad enable && /etc/init.d/wpad start` after the swap (the
+  installer does this for you).
 - `hostapd-utils` (immediate block/unblock), `kmod-nft-bridge` (guest
   isolation), `kmod-veth` (fast roaming with UniFi APs).
 - Optional: `usteer` (band steering), `tc-tiny`, `kmod-sched-core`,

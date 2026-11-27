@@ -64,10 +64,12 @@ package does not require one. Every wpad/hostapd variant, basic or full, provide
 same virtual names, so a dependency could only name one concrete variant. That would
 choose the TLS library for you and would conflict with the `wpad-basic-*` that images
 ship. If a basic variant is installed, the install script says so. To swap it (Wi-Fi
-restarts, so do this over a cable):
+restarts, so do this over a cable). Removing the basic package stops the `wpad`
+service, so enable and start it again after:
 
 ```sh
 apk del wpad-basic-mbedtls && apk add wpad-mbedtls
+/etc/init.d/wpad enable && /etc/init.d/wpad start
 ```
 
 Optional extras: `usteer` (band steering), `alsa-utils` (Locate beep), `snmpd`.

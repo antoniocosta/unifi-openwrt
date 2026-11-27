@@ -47,6 +47,11 @@ if [ "$1" != "--no-packages" ]; then
 		else
 			opkg remove "$basic" && opkg install "$full" || { opkg install "$basic"; die "swap failed, $basic restored"; }
 		fi
+		# removing the basic package stops and disables the wpad service, and
+		# adding the full one does not always bring it back
+		if [ -x /etc/init.d/wpad ]; then
+			/etc/init.d/wpad enable || true; /etc/init.d/wpad start || true
+		fi
 	fi
 	for p in hostapd-utils kmod-nft-bridge kmod-veth; do pm_has $p || pm_add $p; done
 	for p in usteer alsa-utils; do pm_has $p || pm_add $p || say "optional $p not installed"; done
