@@ -100,9 +100,8 @@ pending; OpenWrt and its Wi-Fi are not reset), then
 
 ## Tested devices
 
-Running it on another device? Open an issue or a pull request with the
-device, the OpenWrt version, the UniFi model, the UniFi Network version and
-console, and what you tested, and it gets a row here.
+Running it on another device? It gets a row here. [CONTRIBUTING.md](CONTRIBUTING.md#reporting-a-device)
+has the row to copy and what each cell needs.
 
 | Device | Hardware | OpenWrt | Adopted as | UniFi | Tested |
 |---|---|---|---|---|---|
@@ -279,22 +278,8 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -trimpath -ldflags='-s -w' 
 
 Issues and pull requests are welcome. It has been tested on a few devices only (see [Tested devices](#tested-devices)), so
 reports from other OpenWrt devices, UniFi models and controller versions help
-most: Say which device, OpenWrt version, model (`-model`) and controller version,
-and attach `logread -e uow` with keys and passphrases removed (the daemon never
-logs them).
-
-A dump of what the daemon reads from your AP helps even more, because it
-becomes a test case for your device:
-
-```sh
-uow -dump /tmp/uow-dump.txt
-```
-
-MAC and IP addresses, SSIDs and the hostname are replaced by made-up ones,
-and Wi-Fi passwords and every text field the daemon does not know are left
-out. Read the file before you attach it.
-
-Run `go test ./... && go vet ./...` before sending code.
+most. [CONTRIBUTING.md](CONTRIBUTING.md) says what a report, a device row and a
+pull request need. Coding agents: Read [AGENTS.md](AGENTS.md) too.
 
 ## Credits
 
