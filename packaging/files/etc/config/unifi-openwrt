@@ -26,7 +26,8 @@ config unifi 'main'
 	# e.g. the OnHub); empty = blue, like the UniFi model
 	option led_idle ''
 	# port that is always the uplink, e.g. 'wan' (empty = the port the gateway
-	# is behind, else the first lan port with link)
+	# is behind, else the first lan port with link). WLANs on a VLAN are tagged
+	# on this port too (empty = the first port of br-lan).
 	option uplink_port ''
 	# extra source IP allowed to adopt over SSH; the controller in inform_url is
 	# always allowed, so this is only needed when another host does the SSH

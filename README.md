@@ -33,7 +33,7 @@ So this repo does two things:
   [docs/internals.md](docs/internals.md), so it can be checked, ported to other devices, or carried
   on by anyone.
 
-> **Tested on five devices only**, listed under
+> **Tested on six devices only**, listed under
 > [Tested devices](#tested-devices). Other OpenWrt devices, other UniFi
 > models and other controller versions are **best effort**: They will very
 > likely work, they just have not been tried yet. Reports are welcome.
@@ -85,7 +85,7 @@ device.
    `locate_beep`, `mesh_uplink`,
    `ssh_port` (adoption SSH responder, default 2222), `hw_caps`,
    `inform_every`, `led_idle`, `uplink_port` (the port that is always the
-   uplink, e.g. `wan`), `console` (one more address that may adopt over SSH;
+   uplink, e.g. `wan`; VLANs are tagged on it too), `console` (one more address that may adopt over SSH;
    the controller in the inform URL always may), `ft_relay` (fast roaming
    with UniFi APs, on by default) and `ft_verbose`.
 5. **Adopt.** The AP shows up in the UniFi as pending adoption, with the
@@ -128,7 +128,7 @@ Tested live on the OnHub unless marked otherwise (see [Tested devices](#tested-d
 | Wi-Fi experience (satisfaction) | <img src="docs/images/partial.svg" alt="△" width="16" height="16"> Partial: PHY-rate and retry sub-scores, as the firmware computes them ([details](docs/internals.md#unifi-ap-satisfaction--wifi-experience-score-how-it-is-computed)) |
 | Ethernet ports in the device panel | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (Port Manager; an AC Pro has no port squares) |
 | Wired clients on the AP's LAN ports | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works; tested by [@dohun0310](https://github.com/dohun0310) on the Linksys LN1301, not on the OnHub; in-wall models only (U6-IW and the others with the `ACCESS_POINT_SWITCH` feature) |
-| Radios: Channel, width, transmit power, country | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works. Power as Auto, High or Custom; Medium and Low are the maximum minus 6 and 12 dB (Ubiquiti does not publish its values). By [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner); Medium and Low were not tested on the OnHub |
+| Radios: Channel, width, transmit power, country | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works. Power as Auto, High or Custom; Medium and Low are the maximum minus 6 and 12 dB (Ubiquiti does not publish its values). By [@Lukas-Heiligenbrunner](https://github.com/Lukas-Heiligenbrunner); Medium and Low were not tested on the OnHub. On Auto, 2.4 GHz is kept to channels 1, 6 and 11, and a radio that hostapd leaves without a channel gets one from the daemon |
 | Indoor / Outdoor | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (Country IE environment) |
 | Minimum RSSI, load balancing (max clients) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works |
 | WLANs: SSID, password, WPA2, WPA3, WPA2/WPA3, PMF, hidden, client isolation, U-APSD, DTIM | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (WPA3-only untested live) |
@@ -138,12 +138,12 @@ Tested live on the OnHub unless marked otherwise (see [Tested devices](#tested-d
 | 802.11r (fast transition) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works, also between this AP and genuine UniFi APs, in both directions: The daemon relays the key exchange between the two and speaks UniFi's roam announcements. Tested with a WPA3 client against a UniFi Express 7 (120 to 150 ms per roam). The Wi-Fi configuration stays stock, so the Wi-Fi also starts without the daemon. Each key type (WPA2, WPA3) gets fast roaming only if the WLAN's other APs offer it too; see [internals](docs/internals.md#80211r-fast-roaming-with-unifi-aps) |
 | Band steering | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (usteer, local mode) |
 | Roaming Assistant | <img src="docs/images/partial.svg" alt="△" width="16" height="16"> Built, **untested live**: 802.11v BSS transition requests to weak clients that support them, never a disconnect; needs the full `wpad` |
-| Minimum data rates | <img src="docs/images/partial.svg" alt="△" width="16" height="16"> Clamped: Applied per radio, only when every WLAN on that radio asks for it |
+| Minimum data rates | <img src="docs/images/partial.svg" alt="△" width="16" height="16"> Clamped: Applied per radio, only when every WLAN on that radio asks for it. A 2.4 GHz radio with a WLAN on the default rates keeps the 802.11b rates, as a UniFi AP does |
 | WLAN schedules | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (enforced on the AP) |
 | Rate limits (user groups) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (tc shaping; nftables policing without tc) |
 | Guest WLAN: Isolation, guest DNS | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works |
 | Guest portal (hotspot) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works |
-| VLANs (WLAN on a tagged network) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works |
+| VLANs (WLAN on a tagged network) | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works. The tags go on the first port of `br-lan`, or on `uplink_port` when it is set |
 | Block, Unblock, Reconnect | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works (immediate with `hostapd-utils`) |
 | Locate, LED on/off, Restart | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works; Locate beeps on APs with a speaker |
 | LED colour and brightness | <img src="docs/images/yes.svg" alt="✓" width="16" height="16"> Works on APs with LEDs that can show it (tested on an RGB LED ring). The UniFi only offers it when the AP claims the ability: Set `hw_caps` (the AC Pro itself has none). With `led_idle 'rainbow'` the colour shows only until the rainbow takes over |
@@ -227,8 +227,8 @@ part of this repository.
   backed up and an on-AP timer restores them after 5 minutes unless the
   change is confirmed. 20 s after an apply (2 s after MAC list changes made
   in hostapd) the daemon checks that every enabled radio with interfaces is
-  up and that the controller can still be reached; if not, it rolls back at
-  once.
+  up, that each of its WLANs is on the air and that the controller can still
+  be reached. If not, it rolls back at once.
 - **MAC lists without a Wi-Fi restart**: A plan that changes only MAC filters
   (Lock to AP, MAC filter) is applied in the running hostapd; only the
   clients it denies are disconnected.
